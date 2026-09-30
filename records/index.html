@@ -442,7 +442,7 @@ const FIELDS = [
   {k:"grandfather_name", label:"اسم الجد", sec:"p", max:60, xl:"اسم الجد"},
   {k:"family", label:"العائلة", sec:"p", type:"select", lk:"family", xl:"العائلة"},
   {k:"family_branch", label:"فرع العائلة", sec:"p", type:"select", lk:"branch", xl:"فرع العائلة"},
-  {k:"kunya", label:"الكنية", sec:"p", type:"select", lk:"kunya", xl:"الكنية"},
+  {k:"kunya", label:"الكنية", sec:"p", type:"combo", lk:"kunya", max:60, xl:"الكنية"},
   // الاتصال
   {k:"phone", label:"رقم الهاتف الأساسي", sec:"c", type:"tel", ltr:1, xl:"رقم الهاتف الأساسي"},
   {k:"mobile", label:"رقم الهاتف النقال", sec:"c", type:"tel", ltr:1, xl:"رقم الهاتف النقال"},
@@ -679,6 +679,10 @@ function fieldHtml(f, p){
   const id="f_"+f.k, cls="field"+(f.req?" req":"")+(f.dead?" deadf":"");
   let ctl;
   if(f.virtual) ctl=`<input class="inp" id="${id}" readonly tabindex="-1">`;
+  else if(f.type==="combo"){ // كتابة حرة مع اقتراحات من القائمة ومن الأسماء المستخدمة سابقاً
+    const sug=[...new Set([...(S.lookups[f.lk]||[]).map(x=>x.name), ...S.people.map(x=>x[f.k]).filter(Boolean)])];
+    ctl=`<input class="inp" id="${id}" name="${f.k}" type="text" value="${esc(v)}" maxlength="${f.max||60}" list="dl_${f.k}" placeholder="اكتب الكنية" autocomplete="off"><datalist id="dl_${f.k}">${sug.map(o=>`<option value="${esc(o)}">`).join("")}</datalist>`;
+  }
   else if(f.type==="select") ctl=`<select class="inp${f.ltr?" ltr":""}" id="${id}" name="${f.k}">${selectHtml(f,v)}</select>`;
   else {
     const t = f.type==="number"?"number":f.type==="date"?"date":f.type==="tel"?"tel":f.type==="email"?"email":"text";
