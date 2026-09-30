@@ -724,9 +724,10 @@ function renderRecordForm(){
     }
     if(s==="n"){
       const father=S.byId.get(p.father_id), mother=S.byId.get(p.mother_id);
-      const gf=father&&S.byId.get(father.father_id), gm=father&&S.byId.get(father.mother_id);
+      const gf=father&&S.byId.get(father.father_id), gm=father&&S.byId.get(father.mother_id), mgf=mother&&S.byId.get(mother.father_id), mgm=mother&&S.byId.get(mother.mother_id);
+      const gl=x=>x?`${fullName(x)} (${x.serial})`:"";
       h+=`<div class="fgrid">${pickerHtml("father_id","الأب",father)}${pickerHtml("mother_id","الأم",mother)}
-        ${roField("الجد (أب الأب)", gf?`${fullName(gf)} (${gf.serial})`:"")}${roField("الجدة (أم الأب)", gm?`${fullName(gm)} (${gm.serial})`:"")}</div>`;
+        ${roField("الجد لأب (أب الأب)", gl(gf))}${roField("الجدة لأب (أم الأب)", gl(gm))}${roField("الجد لأم (أب الأم)", gl(mgf))}${roField("الجدة لأم (أم الأم)", gl(mgm))}</div>`;
       h+=`<div class="fgrid mgrid" style="margin-top:10px">`;
       for(let i=1;i<=4;i++){
         const m=S.curMarriages.find(x=>x.ord===i)||{}; const sp=S.byId.get(m.spouse_id);
@@ -940,7 +941,7 @@ function kv(pairs){ return `<div class="kv">${pairs.map(([k,v])=>`<div><span>${k
 async function reportHtml(long){
   const p=S.current; const url=await photoUrl(p.photo_path);
   const father=S.byId.get(p.father_id), mother=S.byId.get(p.mother_id);
-  const gf=father&&S.byId.get(father.father_id), gm=father&&S.byId.get(father.mother_id);
+  const gf=father&&S.byId.get(father.father_id), gm=father&&S.byId.get(father.mother_id), mgf=mother&&S.byId.get(mother.father_id), mgm=mother&&S.byId.get(mother.mother_id);
   const addr=[p.house_no&&`منزل ${p.house_no}`, p.apartment_no&&`شقة ${p.apartment_no}`, p.road_no&&`طريق ${p.road_no}`, p.block_no&&`مجمع ${p.block_no}`, p.area, p.governorate].filter(Boolean).join("، ");
   const age=ageOf(p);
   let h=`<div class="rh">${url?`<img class="ph" src="${esc(url)}" alt="صورة صاحب الملف" style="object-fit:cover">`:`<div class="ph"></div>`}<div style="flex:1">
@@ -958,7 +959,7 @@ async function reportHtml(long){
   h+=`<h5>معلومات إضافية</h5>`+kv([["البريد الإلكتروني",p.email],["الهاتف النقال",p.mobile],["الجنس",p.gender],["تاريخ الميلاد",fmtDate(p.birth_date)],["مكان الميلاد",p.birth_place],["العمر",age!==""?`${age} سنة`:""],["حالة القيد",p.life_status],...(p.life_status==="متوفى"?[["تاريخ الوفاة",fmtDate(p.death_date)],["مكان الدفن",p.burial_place]]:[]),["فصيلة الدم",p.blood_type],["الحالة الاجتماعية",p.marital_status]]);
   const ms=marriagesOf(p.id);
   const lbl=x=>x?`${fullName(x)} (${x.serial})`:"";
-  h+=`<h5>النسب والزواج</h5>`+kv([["الأب",lbl(father)],["الأم",lbl(mother)],["الجد",lbl(gf)],["الجدة",lbl(gm)],[p.gender==="أنثى"?"عدد مرات الزواج":"عدد الزوجات",ms.length||""],...ms.map(m=>[`زواج ${m.ord}`,spouseLabel(m)])]);
+  h+=`<h5>النسب والزواج</h5>`+kv([["الأب",lbl(father)],["الأم",lbl(mother)],["الجد لأب",lbl(gf)],["الجدة لأب",lbl(gm)],["الجد لأم",lbl(mgf)],["الجدة لأم",lbl(mgm)],[p.gender==="أنثى"?"عدد مرات الزواج":"عدد الزوجات",ms.length||""],...ms.map(m=>[`زواج ${m.ord}`,spouseLabel(m)])]);
   const kids=childrenOf(p);
   if(kids.length) h+=`<h5>الأبناء (${kids.length})</h5><div>${kids.map(k=>esc(`${k.first_name} (${k.serial})${k.life_status==="متوفى"?" — متوفى":""}`)).join("، ")}</div>`;
   if(p.history_notes) h+=`<h5>الملاحظات التاريخية</h5><div style="white-space:pre-wrap">${esc(p.history_notes)}</div>`;
