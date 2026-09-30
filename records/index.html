@@ -125,20 +125,37 @@ table.tbl{width:100%;border-collapse:collapse;font-size:15px}
 .tag{display:inline-block;font-size:12px;border-radius:999px;padding:0 8px;border:1px solid var(--line);color:var(--ink-2)}
 .tag.dead{border-color:var(--ink-3);background:var(--tan-l)}
 .empty{text-align:center;padding:30px 12px;color:var(--ink-3)}
+/* بطاقات الأشخاص */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.pcard{display:flex;align-items:center;gap:12px;text-align:start;background:var(--paper);border:1.5px solid var(--line);border-inline-start:5px solid var(--olive);border-radius:12px;padding:10px 12px;cursor:pointer;color:var(--ink);min-width:0;transition:transform .12s, box-shadow .12s, border-color .12s}
+.pcard:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--olive)}
+.pcard.f{border-inline-start-color:#b0708a}
+.pcard.dead{border-inline-start-color:var(--ink-3)}
+.pc-dead{color:var(--ink-3);font-weight:700}
+.pc-body{display:grid;gap:1px;min-width:0;flex:1}
+.pc-body b{font-size:15.5px;font-weight:800;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pc-meta{font-size:13px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc-serial{font-family:ui-monospace,Consolas,monospace;direction:ltr;unicode-bidi:isolate;background:var(--tan-l);border-radius:6px;padding:0 6px;font-size:12px;color:var(--olive-d)}
+.av{flex:none;width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:var(--olive-l) center/cover no-repeat;color:var(--olive-d);font-weight:800;font-size:22px;border:2px solid var(--olive)}
+.av.f{background-color:#f3e1e8;color:#8a4a62;border-color:#b0708a}
+.av.sm{width:36px;height:36px;font-size:15px;border-width:1.5px}
+.av.has{color:transparent}
 /* ===== Tree ===== */
 .tree{overflow:auto;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:14px;max-height:75vh}
 .tree ul{list-style:none;margin:0;padding-inline-start:26px;position:relative}
 .tree>ul{padding-inline-start:0}
 .tree li{position:relative;padding:4px 0}
 .tree ul ul>li::before{content:"";position:absolute;inset-inline-start:-16px;top:0;bottom:0;border-inline-start:2px solid var(--tan)}
-.tree ul ul>li:last-child::before{bottom:auto;height:24px}
-.tree ul ul>li::after{content:"";position:absolute;inset-inline-start:-16px;top:24px;width:14px;border-top:2px solid var(--tan)}
+.tree ul ul>li:last-child::before{bottom:auto;height:28px}
+.tree ul ul>li::after{content:"";position:absolute;inset-inline-start:-16px;top:28px;width:14px;border-top:2px solid var(--tan)}
 .node{display:inline-flex;align-items:center;gap:6px}
-.nodebtn{border:2px solid var(--olive);background:var(--paper);border-radius:8px;padding:4px 10px;cursor:pointer;text-align:start;color:var(--ink)}
+.nodebtn{border:2px solid var(--olive);background:var(--paper);border-radius:12px;padding:5px 12px 5px 8px;cursor:pointer;text-align:start;color:var(--ink);display:inline-flex;align-items:center;gap:8px;box-shadow:0 2px 6px rgba(60,55,30,.08)}
+.nodebtn .nb{display:grid;line-height:1.3}
+.nodebtn:hover{background:var(--olive-l)}
 .nodebtn.f{border-color:#b0708a}
 .nodebtn.dead{border-style:dashed;opacity:.85}
 .nodebtn b{font-weight:800}
-.nodebtn small{color:var(--ink-3);margin-inline-start:6px}
+.nodebtn small{color:var(--ink-3);font-size:12px}
 .tog{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--olive);background:var(--olive-l);cursor:pointer;font-weight:800;color:var(--olive-d);line-height:1;padding:0}
 .tog.none{visibility:hidden}
 /* ===== Dialogs ===== */
@@ -294,7 +311,7 @@ dialog::backdrop{background:rgba(30,28,18,.55)}
         <button class="btn primary" type="button" data-go="new" data-edit>إضافة سجل</button>
       </div>
       <div class="muted" id="listCount" style="font-size:14px;margin-bottom:6px"></div>
-      <div class="tbl-wrap"><table class="tbl"><thead><tr><th>التسلسل</th><th>الاسم</th><th>الرقم الشخصي</th><th>الهاتف</th><th>منطقة السكن</th><th>العمر</th><th>الحالة</th></tr></thead><tbody id="listBody"></tbody></table></div>
+      <div class="cards" id="listBody"></div>
     </section>
 
     <!-- الشجرة -->
@@ -968,12 +985,31 @@ function filtered(){
   return S.people.filter(p=>(!g||p.gender===g)&&(!l||p.life_status===l)&&(!a||p.area===a)&&
     (!q || norm(fullName(p)).includes(q) || String(p.serial)===q || (p.cpr||"").includes(q) || (p.phone||"").includes(q) || (p.mobile||"").includes(q)));
 }
+function avatarHtml(p, cls=""){ return `<span class="av ${cls} ${p.gender==="أنثى"?"f":""}" ${p.photo_path?`data-photo="${esc(p.photo_path)}"`:""} aria-hidden="true">${esc((p.first_name||"؟").trim().charAt(0))}</span>`; }
+function cardHtml(p){
+  const dead=p.life_status==="متوفى", age=ageOf(p);
+  const meta=[age!==""?`${age} سنة`:"", p.area||""].filter(Boolean).join(" · ") + (dead?" · ":"");
+  return `<button type="button" class="pcard ${p.gender==="أنثى"?"f":""} ${dead?"dead":""}" data-open="${p.id}">${avatarHtml(p)}
+    <span class="pc-body"><b>${esc(fullName(p))}</b>
+    <span class="pc-meta"><span class="pc-serial">#${p.serial}</span> ${esc(meta)}${dead?'<span class="pc-dead">متوفى</span>':""}</span>
+    <span class="pc-meta ltr" style="text-align:end">${esc(p.phone||p.mobile||"")}</span></span>
+    </button>`;
+}
+// روابط الصور الموقّعة تُطلب دفعة واحدة وتُحفظ ساعة
+const photoCache=new Map();
+async function hydratePhotos(root){
+  const els=[...root.querySelectorAll("[data-photo]")]; if(!els.length) return;
+  const need=[...new Set(els.map(e=>e.dataset.photo).filter(pth=>!photoCache.has(pth)))];
+  if(need.length){ try{ const {data}=await db.storage.from(PHOTO_BUCKET).createSignedUrls(need,3600); (data||[]).forEach(d=>{ if(d.signedUrl) photoCache.set(d.path,d.signedUrl); }); }catch(e){} }
+  els.forEach(e=>{ const u=photoCache.get(e.dataset.photo); if(u){ e.style.backgroundImage=`url("${u}")`; e.classList.add("has"); } });
+}
 function renderList(){
   fillAreaFilter();
   const rows=filtered();
   $("#listCount").textContent=`${rows.length} من ${S.people.length} سجل`;
-  $("#listBody").innerHTML = rows.length ? rows.slice(0,500).map(p=>`<tr data-open="${p.id}" tabindex="0"><td class="ltr" style="text-align:start">${p.serial}</td><td><b>${esc(fullName(p))}</b></td><td class="ltr" style="text-align:start">${esc(p.cpr||"")}</td><td class="ltr" style="text-align:start">${esc(p.phone||p.mobile||"")}</td><td>${esc(p.area||"")}</td><td>${ageOf(p)}</td><td><span class="tag ${p.life_status==="متوفى"?"dead":""}">${esc(p.life_status)}</span></td></tr>`).join("")
-    : `<tr><td colspan="7" class="empty">${S.people.length?"لا توجد نتائج مطابقة":"لا توجد سجلات بعد — ابدأ بـ «إضافة سجل»"}</td></tr>`;
+  $("#listBody").innerHTML = rows.length ? rows.slice(0,500).map(cardHtml).join("")
+    : `<div class="empty" style="grid-column:1/-1">${S.people.length?"لا توجد نتائج مطابقة":"لا توجد سجلات بعد — ابدأ بـ «إضافة سجل»"}</div>`;
+  hydratePhotos($("#listBody"));
 }
 ["#qText","#qGender","#qLife","#qArea"].forEach(s=>$(s).addEventListener("input",renderList));
 $("#listBody").addEventListener("click",e=>{ const r=e.target.closest("[data-open]"); if(r) openRecord(+r.dataset.open); });
@@ -1019,7 +1055,7 @@ function nodeHtml(p, depth, seen, focusId){
   const kids=treeKids(p); const open = depth<2 || (focusId && isAncestorOf(p.id, focusId));
   const yrs=[p.birth_date?.slice(0,4), p.life_status==="متوفى"?(p.death_date?.slice(0,4)||"✝"):null].filter(Boolean).join("–");
   return `<li${open?"":" class=closed"}><div class="node"><button type="button" class="tog ${kids.length?"":"none"}" aria-label="فتح/طي">${open?"−":"+"}</button>
-    <button type="button" class="nodebtn ${p.gender==="أنثى"?"f":""} ${p.life_status==="متوفى"?"dead":""}" data-open="${p.id}" ${p.id===focusId?'style="background:var(--olive-l)"':""}><b>${esc(p.first_name)}</b><small>#${p.serial}${yrs?` · ${yrs}`:""}${kids.length?` · ${kids.length} أبناء`:""}</small></button></div>
+    <button type="button" class="nodebtn ${p.gender==="أنثى"?"f":""} ${p.life_status==="متوفى"?"dead":""}" data-open="${p.id}" ${p.id===focusId?'style="background:var(--olive-l)"':""}>${avatarHtml(p,"sm")}<span class="nb"><b>${esc(p.first_name)}</b><small>#${p.serial}${yrs?` · ${yrs}`:""}${kids.length?` · ${kids.length} أبناء`:""}</small></span></button></div>
     ${kids.length?`<ul ${open?"":"hidden"}>${kids.map(k=>nodeHtml(k,depth+1,seen,focusId)).join("")}</ul>`:""}</li>`;
 }
 function isAncestorOf(a, id){ let x=S.byId.get(id), g=0; while(x && g++<80){ const f=x.father_id, m=x.mother_id; if(f===a||m===a) return true; x=S.byId.get(f)||S.byId.get(m); } return false; }
@@ -1028,6 +1064,7 @@ function drawTree(focusId){
   const roots = v ? [S.byId.get(+v)] : S.people.filter(p=>!S.byId.get(p.father_id) && !S.byId.get(p.mother_id) && (p.gender!=="أنثى"||treeKids(p).length));
   $("#treeBox").innerHTML = S.people.length ? `<ul>${roots.map(r=>nodeHtml(r,0,seen,focusId)).join("")}</ul>` : '<div class="empty">لا توجد سجلات بعد</div>';
   if(focusId){ const b=$(`#treeBox [data-open="${focusId}"]`); b?.scrollIntoView({block:"center",inline:"center"}); }
+  hydratePhotos($("#treeBox"));
 }
 $("#treeRoot").onchange=()=>drawTree();
 $("#treeBox").addEventListener("click",e=>{
