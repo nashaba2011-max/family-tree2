@@ -181,8 +181,8 @@ table.tbl{width:100%;border-collapse:collapse;font-size:15px}
 .sc-back{transform:rotateY(180deg);align-items:stretch;text-align:start;padding:14px}
 .sc-band{width:100%;height:78px;flex:none;background:linear-gradient(135deg,var(--band),var(--band2));position:relative}
 .sc-band::before{content:"";position:absolute;inset:0;opacity:.18;background:repeating-linear-gradient(45deg,#fff 0 2px,transparent 2px 12px)}
-.sc-ser{position:absolute;top:8px;inset-inline-start:12px;color:#fff;font-size:12px;font-weight:700;font-family:ui-monospace,Consolas,monospace;direction:ltr;background:rgba(0,0,0,.18);border-radius:999px;padding:1px 8px}
-.sc-flip{position:absolute;top:6px;inset-inline-end:8px;width:30px;height:30px;border-radius:50%;border:0;background:rgba(255,255,255,.9);color:var(--olive-d);font-size:16px;font-weight:800;cursor:pointer;display:grid;place-items:center;z-index:2}
+.sc-ser{position:absolute;top:8px;right:12px;color:#fff;font-size:12px;font-weight:700;font-family:ui-monospace,Consolas,monospace;direction:ltr;background:rgba(0,0,0,.18);border-radius:999px;padding:1px 8px}
+.sc-flip{position:absolute;top:6px;left:8px;width:30px;height:30px;border-radius:50%;border:0;background:rgba(255,255,255,.9);color:var(--olive-d);font-size:16px;font-weight:800;cursor:pointer;display:grid;place-items:center;z-index:2}
 .sc-back .sc-flip{background:var(--tan-l)}
 .sc-av{margin-top:-46px;width:92px;height:92px;border-radius:50%;border:4px solid var(--paper);box-shadow:0 0 0 3px var(--band);background:var(--olive-l) center/cover no-repeat;display:grid;place-items:center;font-size:38px;font-weight:800;color:var(--olive-d);position:relative;z-index:1;transition:transform .3s}
 .scard.f .sc-av{background-color:#f3e1e8;color:#8a4a62}
@@ -206,6 +206,41 @@ table.tbl{width:100%;border-collapse:collapse;font-size:15px}
 .sc-acts button{border:1.5px solid var(--band);background:var(--paper);color:var(--ink);border-radius:10px;padding:6px 2px;font-size:12.5px;font-weight:700;cursor:pointer}
 .sc-acts button:hover{background:var(--olive-l)}
 .sc-phone{text-align:center;font-size:13px;color:var(--ink-2);margin-top:6px;direction:ltr}
+
+/* ===== التصميم الزجاجي ===== */
+.cards{padding:18px;border-radius:22px;background:
+  radial-gradient(circle at 12% 15%,rgba(124,196,182,.85),transparent 38%),
+  radial-gradient(circle at 88% 30%,rgba(217,165,91,.8),transparent 40%),
+  radial-gradient(circle at 40% 95%,rgba(176,112,138,.55),transparent 42%),
+  #1f3a33;background-attachment:local}
+.cards .empty{color:#e8efe9}
+.scard{height:310px;--band:#7cc4b6}
+.scard.f{--band:#f0a9c4}
+.scard.dead{--band:#c9c3ad}
+.scard .sc-face{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.35);backdrop-filter:blur(16px) saturate(140%);-webkit-backdrop-filter:blur(16px) saturate(140%);box-shadow:0 12px 30px rgba(0,0,0,.25);color:#fff;border-radius:24px}
+.scard .sc-face::after{background:radial-gradient(circle at var(--gx) var(--gy),rgba(255,255,255,.45),transparent 50%)}
+.scard .sc-band{height:34px;background:none}
+.scard .sc-band::before{display:none}
+.scard .sc-ser{background:rgba(255,255,255,.18);color:#fff}
+.scard .sc-flip{background:rgba(255,255,255,.22);color:#fff;border:1px solid rgba(255,255,255,.4)}
+.scard .sc-av{margin-top:0;width:96px;height:96px;border:3px solid rgba(255,255,255,.75);box-shadow:0 0 0 5px rgba(255,255,255,.12),0 8px 20px rgba(0,0,0,.25);background-color:rgba(255,255,255,.2);color:#fff}
+.scard.f .sc-av{background-color:rgba(240,169,196,.35);color:#fff}
+.scard .sc-name{color:#fff;font-size:17px}
+.scard .sc-fam{color:rgba(255,255,255,.75)}
+.scard .sc-chips span{background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.25)}
+.scard .sc-stats{border-top:1px solid rgba(255,255,255,.25)}
+.scard .sc-stats span{color:rgba(255,255,255,.75)}
+.scard .sc-stats span+span{border-inline-start:1px solid rgba(255,255,255,.2)}
+.scard .sc-stats b{color:var(--band)}
+.scard .sc-back b{color:#fff}
+.scard .sc-row{border-bottom:1px dashed rgba(255,255,255,.25)}
+.scard .sc-row span{color:rgba(255,255,255,.7)}
+.scard .sc-kids .av{border-color:rgba(255,255,255,.8);box-shadow:none}
+.scard .sc-kids em,.scard .sc-phone{color:rgba(255,255,255,.8)}
+.scard .sc-acts button{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.45);color:#fff}
+.scard .sc-acts button:hover{background:rgba(255,255,255,.28)}
+.scard:focus-visible .sc-face{outline-color:#fff}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.scard .sc-face{background:rgba(31,58,51,.85)}}
 @media (prefers-reduced-motion:reduce){.sc-inner{transition:none}}
 .pcard{display:flex;align-items:center;gap:12px;text-align:start;background:var(--paper);border:1.5px solid var(--line);border-inline-start:5px solid var(--olive);border-radius:12px;padding:10px 12px;cursor:pointer;color:var(--ink);min-width:0;transition:transform .12s, box-shadow .12s, border-color .12s}
 .pcard:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--olive)}
