@@ -153,13 +153,6 @@ table.tbl{width:100%;border-collapse:collapse;font-size:15px}
 #dFam .mini.f{border-color:rgba(240,169,196,.9)}
 #dFam .mini small{color:rgba(255,255,255,.75)}
 #dFam .mini:hover{background:rgba(255,255,255,.3)}
-.mini-wrap{display:inline-flex;align-items:center;gap:4px}
-.mini-acts{display:inline-flex;flex-direction:column;gap:3px}
-.mini-acts button{width:28px;height:24px;border-radius:8px;border:1px solid var(--line);background:var(--card,#fff);cursor:pointer;font-size:13px;line-height:1;padding:0}
-.mini-acts button.del{color:#b3261e}
-#dFam .mini-acts button{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.5);color:#fff}
-#dFam .mini-acts button:hover{background:rgba(255,255,255,.4)}
-#dFam .mini-acts button.del:hover{background:#b3261e;border-color:#b3261e}
 #dFam .fam-name{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.35);color:#fff}
 #dFam .fam-none{color:rgba(255,255,255,.6)}
 #dFam .linkhint{margin-top:8px;font-size:13px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;color:rgba(255,255,255,.9)}
@@ -1437,8 +1430,7 @@ function siblingsOf(p){
 }
 function famMini(x,note=""){
   const btn=`<button type="button" class="mini ${isM(x)?"":"f"}" data-fam="${x.id}">${avatarHtml(x,"sm")}<span><b>${esc(x.first_name)}</b><small>#${x.serial}${x.birth_date?" · "+x.birth_date.slice(0,4):""}${x.life_status==="متوفى"?" · متوفى":""}${note?" · "+note:""}</small></span></button>`;
-  if(!canEdit()) return btn;
-  return `<span class="mini-wrap">${btn}<span class="mini-acts"><button type="button" data-fedit="${x.id}" title="تعديل ${esc(x.first_name)}" aria-label="تعديل ${esc(x.first_name)}">✎</button>${isAdmin()?`<button type="button" class="del" data-fdel="${x.id}" title="حذف ${esc(x.first_name)}" aria-label="حذف ${esc(x.first_name)}">🗑</button>`:""}</span></span>`;
+  return btn;
 }
 function famGroup(title, items){ return `<div class="fam-grp"><h5>${title} (${items.length})</h5><div class="fam-list">${items.length?items.join(""):'<span class="fam-none">لا يوجد</span>'}</div></div>`; }
 function fatherCandidates(p){
@@ -1489,9 +1481,6 @@ function showFamily(id){
   $("#famBody").scrollTop=0; hydratePhotos($("#dFam"));
 }
 $("#famBody").addEventListener("click",async e=>{ const l=e.target.closest("[data-linkf]"); if(l){ l.disabled=true; if(await linkFather(famId,+l.dataset.linkf)){ showFamily(famId); if(!$("#vList").hidden) renderList(); } else l.disabled=false; return; }
-  const ed=e.target.closest("[data-fedit]"); if(ed){ const back=famId; $("#dFam").close(); await openRecord(+ed.dataset.fedit); if(S.current?.id===+ed.dataset.fedit) S.returnFam=back; return; }
-  const dl=e.target.closest("[data-fdel]"); if(dl){ const x=S.byId.get(+dl.dataset.fdel); if(!x) return;
-    if(await deletePerson(x)){ if(x.id===famId){ $("#dFam").close(); } else showFamily(famId); if(!$("#vList").hidden) renderList(); } return; }
   const b=e.target.closest("[data-fam]"); if(b) showFamily(+b.dataset.fam); });
 $("#famOpen").onclick=()=>{ $("#dFam").close(); openRecord(famId); };
 $("#famRel").onclick=()=>{ $("#dFam").close(); REL.a=famId; REL.b=null; go("rel"); };
