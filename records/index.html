@@ -449,7 +449,8 @@ dialog::backdrop{background:rgba(30,28,18,.55)}
     <!-- السجلات والبحث -->
     <section id="vList" hidden>
       <div class="toolbar">
-        <input class="inp" id="qText" type="search" placeholder="ابحث بالاسم، رقم التسلسل، الرقم الشخصي أو الهاتف…" aria-label="بحث">
+        <select class="inp" id="qBy" aria-label="البحث بـ"><option value="">بحث في الكل</option><option value="name">اسم الشخص</option><option value="mother">اسم الأم</option><option value="father">اسم الأب</option></select>
+        <input class="inp" id="qText" type="search" placeholder="ابحث بالاسم، اسم الأم، رقم التسلسل، الرقم الشخصي أو الهاتف…" aria-label="بحث">
         <select class="inp" id="qGender" aria-label="الجنس"><option value="">الكل</option><option>ذكر</option><option>أنثى</option></select>
         <select class="inp" id="qLife" aria-label="حالة القيد"><option value="">كل الحالات</option><option>على قيد الحياة</option><option>متوفى</option></select>
         <select class="inp" id="qArea" aria-label="منطقة السكن"><option value="">كل المناطق</option></select>
@@ -1251,9 +1252,17 @@ function fillAreaFilter(){
   $("#qArea").innerHTML=`<option value="">كل المناطق</option>`+areas.map(a=>`<option ${a===cur?"selected":""}>${esc(a)}</option>`).join("");
 }
 function filtered(){
-  const q=norm($("#qText").value), g=$("#qGender").value, l=$("#qLife").value, a=$("#qArea").value;
-  return S.people.filter(p=>(!g||p.gender===g)&&(!l||p.life_status===l)&&(!a||p.area===a)&&
-    (!q || norm(fullName(p)).includes(q) || String(p.serial)===q || (p.cpr||"").includes(q) || (p.phone||"").includes(q) || (p.mobile||"").includes(q)));
+  const q=norm($("#qText").value), by=$("#qBy").value, g=$("#qGender").value, l=$("#qLife").value, a=$("#qArea").value;
+  const momOf=p=>{ const m=S.byId.get(p.mother_id); return norm(m?fullName(m):([p.mother_first,p.mother_father,p.mother_grandfather,p.mother_family].filter(Boolean).join(" ")||p.mother_name||"")); };
+  const dadOf=p=>{ const f=S.byId.get(p.father_id); return norm(f?fullName(f):[p.father_name,p.grandfather_name].filter(Boolean).join(" ")); };
+  const hit=p=>{
+    if(!q) return true;
+    if(by==="mother") return momOf(p).includes(q);
+    if(by==="father") return dadOf(p).includes(q);
+    if(by==="name") return norm(fullName(p)).includes(q);
+    return norm(fullName(p)).includes(q) || momOf(p).includes(q) || String(p.serial)===q || (p.cpr||"").includes(q) || (p.phone||"").includes(q) || (p.mobile||"").includes(q);
+  };
+  return S.people.filter(p=>(!g||p.gender===g)&&(!l||p.life_status===l)&&(!a||p.area===a)&&hit(p));
 }
 function avatarHtml(p, cls=""){ return `<span class="av ${cls} ${p.gender==="أنثى"?"f":""}" ${p.photo_path?`data-photo="${esc(p.photo_path)}"`:""} aria-hidden="true">${esc((p.first_name||"؟").trim().charAt(0))}</span>`; }
 function cardHtml(p){
@@ -1301,7 +1310,7 @@ function renderList(){
     : `<div class="empty" style="grid-column:1/-1">${S.people.length?"لا توجد نتائج مطابقة":"لا توجد سجلات بعد — ابدأ بـ «إضافة سجل»"}</div>`;
   hydratePhotos($("#listBody"));
 }
-["#qText","#qGender","#qLife","#qArea"].forEach(s=>$(s).addEventListener("input",renderList));
+["#qText","#qBy","#qGender","#qLife","#qArea"].forEach(s=>$(s).addEventListener("input",renderList));
 $("#listBody").addEventListener("click",e=>{
   const card=e.target.closest("[data-card]"); if(!card) return; const id=+card.dataset.card;
   if(e.target.closest("[data-flip]")){ card.classList.toggle("flipped"); hydratePhotos(card); return; }
