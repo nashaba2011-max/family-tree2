@@ -519,7 +519,7 @@ const FIELDS = [
 const SECTIONS = [
   ["p","معلومات شخصية"],["c","الاتصال"],["b","الميلاد والحالة"],["a","العنوان"],["n","النسب والزواج"],["w","المؤهلات والعمل"],["h","الملاحظات التاريخية"]
 ];
-const DB_COLS = FIELDS.filter(f=>!f.virtual).map(f=>f.k).concat(["father_id","mother_id","mother_name","history_notes","photo_path"]);
+const DB_COLS = FIELDS.filter(f=>!f.virtual).map(f=>f.k).concat(["father_id","mother_id","history_notes","photo_path"]);
 
 /* ================== الحالة ================== */
 const S = { email:"", role:null, people:[], byId:new Map(), marriages:[], lookups:{}, current:null, dirty:false, photoBlob:null, photoRemoved:false, lastList:"list" };
@@ -772,9 +772,7 @@ function renderRecordForm(){
       const father=S.byId.get(p.father_id), mother=S.byId.get(p.mother_id);
       const gf=father&&S.byId.get(father.father_id), gm=father&&S.byId.get(father.mother_id), mgf=mother&&S.byId.get(mother.father_id), mgm=mother&&S.byId.get(mother.mother_id);
       const gl=x=>x?`${fullName(x)} (${x.serial})`:"";
-      h+=`<div class="fgrid">${pickerHtml("father_id","الأب",father)}<div class="field" data-k="mother_id"><label>الأم</label><div class="spouse">
-          <div class="picker"><button type="button" class="pv ${mother?"":"empty"}" data-pick="mother_id">${mother?esc(fullName(mother))+` <small class="muted">(${mother.serial})</small>`:"من السجلات…"}</button>${mother?`<button type="button" class="btn small x" data-clear="mother_id" aria-label="إزالة">✕</button>`:""}</div>
-          <input class="inp" id="f_mother_name" name="mother_name" placeholder="أو اكتب اسم الأم" value="${mother?"":esc(p.mother_name||"")}" ${mother?"disabled":""} maxlength="120"></div></div>
+      h+=`<div class="fgrid">${pickerHtml("father_id","الأب",father)}${pickerHtml("mother_id","الأم",mother)}
         ${roField("الجد لأب (أب الأب)", gl(gf))}${roField("الجدة لأب (أم الأب)", gl(gm))}${roField("الجد لأم (أب الأم)", gl(mgf))}${roField("الجدة لأم (أم الأم)", gl(mgm))}</div>`;
       h+=`<div class="fgrid mgrid" style="margin-top:10px">`;
       for(let i=1;i<=4;i++){
@@ -804,7 +802,6 @@ function readForm(){
   const p=S.current, f=$("#recForm");
   FIELDS.forEach(x=>{ if(x.virtual) return; const el=f.querySelector(`[name="${x.k}"]`); if(!el) return; let v=el.value.trim(); if(x.type==="number") v = v===""?null:parseInt(v,10); p[x.k] = v===""?null:v; });
   p.history_notes = ($("#f_history_notes").value.trim()) || null;
-  const mn=$("#f_mother_name"); if(mn && !p.mother_id) p.mother_name = mn.value.trim()||null;
   f.querySelectorAll("[data-mname]").forEach(inp=>{
     const i=+inp.dataset.mname; let m=S.curMarriages.find(x=>x.ord===i);
     if(!m){ m={ord:i}; S.curMarriages.push(m); }
@@ -868,7 +865,6 @@ function setLink(key, person){
   const p=S.current;
   if(key==="father_id"||key==="mother_id"){
     p[key]=person?person.id:null;
-    if(key==="mother_id") p.mother_name = person ? fullName(person) : null;
     if(key==="father_id" && person){ // تعبئة تلقائية من الأب
       p.father_name=person.first_name;
       // سلسلة الأجداد تُنقل من سجل الأب: جد الابن الأول = أب الأب ... وهكذا
@@ -1039,7 +1035,7 @@ async function reportHtml(long){
   h+=`<h5>معلومات إضافية</h5>`+kv([["البريد الإلكتروني",p.email],["الهاتف النقال",p.mobile],["الجنس",p.gender],["تاريخ الميلاد",fmtDate(p.birth_date)],["مكان الميلاد",p.birth_place],["العمر",age!==""?`${age} سنة`:""],["حالة القيد",p.life_status],...(p.life_status==="متوفى"?[["تاريخ الوفاة",fmtDate(p.death_date)],["مكان الدفن",p.burial_place]]:[]),["فصيلة الدم",p.blood_type],["الحالة الاجتماعية",p.marital_status]]);
   const ms=marriagesOf(p.id);
   const lbl=x=>x?`${fullName(x)} (${x.serial})`:"";
-  h+=`<h5>النسب والزواج</h5>`+kv([["الأب",lbl(father)],["الأم",lbl(mother)||p.mother_name||""],["الجد لأب",lbl(gf)],["الجدة لأب",lbl(gm)],["الجد لأم",lbl(mgf)],["الجدة لأم",lbl(mgm)],[p.gender==="أنثى"?"عدد مرات الزواج":"عدد الزوجات",ms.length||""],...ms.map(m=>[`زواج ${m.ord}`,spouseLabel(m)])]);
+  h+=`<h5>النسب والزواج</h5>`+kv([["الأب",lbl(father)],["الأم",lbl(mother)],["الجد لأب",lbl(gf)],["الجدة لأب",lbl(gm)],["الجد لأم",lbl(mgf)],["الجدة لأم",lbl(mgm)],[p.gender==="أنثى"?"عدد مرات الزواج":"عدد الزوجات",ms.length||""],...ms.map(m=>[`زواج ${m.ord}`,spouseLabel(m)])]);
   const kids=childrenOf(p);
   if(kids.length) h+=`<h5>الأبناء (${kids.length})</h5><div>${kids.map(k=>esc(`${k.first_name} (${k.serial})${k.life_status==="متوفى"?" — متوفى":""}`)).join("، ")}</div>`;
   if(p.history_notes) h+=`<h5>الملاحظات التاريخية</h5><div style="white-space:pre-wrap">${esc(p.history_notes)}</div>`;
@@ -1101,12 +1097,12 @@ $("#listBody").addEventListener("click",e=>{ const r=e.target.closest("[data-ope
 $("#listBody").addEventListener("keydown",e=>{ const r=e.target.closest("[data-open]"); if(r&&e.key==="Enter") openRecord(+r.dataset.open); });
 
 /* ---------- التصدير ---------- */
-const XL_COLS = ["رقم التسلسل","الرقم الشخصي","فرع العائلة","الاسم الأول","اسم الأب","اسم الجد","اسم الجد الثاني","اسم الجد الثالث","اسم الجد الرابع","العائلة","الكنية","اسم الأم","الرقم الشخصي للاب","الرقم الشخصي للام","زواج 1","زواج 2","زواج 3","زواج 4","الحالة الاجتماعية","الجنس","تاريخ الميلاد","مكان الميلاد","فصيلة الدم","رقم الهاتف الأساسي","رقم الهاتف النقال","البريد الإلكتروني","المحافظة","منطقة السكن","رقم المنزل","رقم الشقة","رقم الشارع","رقم المجمع","المؤهل العلمي","التخصص الدقيق","المسمى الوظيفي","جهة العمل","الهواية","حالة القيد","تاريخ الوفاة","مكان الدفن","رقم تسلسل الأب","رقم تسلسل الأم","الرقم المصنف"];
+const XL_COLS = ["رقم التسلسل","الرقم الشخصي","فرع العائلة","الاسم الأول","اسم الأب","اسم الجد","اسم الجد الثاني","اسم الجد الثالث","اسم الجد الرابع","العائلة","الكنية","الرقم الشخصي للاب","الرقم الشخصي للام","زواج 1","زواج 2","زواج 3","زواج 4","الحالة الاجتماعية","الجنس","تاريخ الميلاد","مكان الميلاد","فصيلة الدم","رقم الهاتف الأساسي","رقم الهاتف النقال","البريد الإلكتروني","المحافظة","منطقة السكن","رقم المنزل","رقم الشقة","رقم الشارع","رقم المجمع","المؤهل العلمي","التخصص الدقيق","المسمى الوظيفي","جهة العمل","الهواية","حالة القيد","تاريخ الوفاة","مكان الدفن","رقم تسلسل الأب","رقم تسلسل الأم","الرقم المصنف"];
 function rowFor(p){
   const r={}; FIELDS.forEach(f=>{ if(f.xl) r[f.xl]=p[f.k]??""; });
   r["تاريخ الميلاد"]=fmtDate(p.birth_date); r["تاريخ الوفاة"]=fmtDate(p.death_date);
   const fa=S.byId.get(p.father_id), mo=S.byId.get(p.mother_id);
-  r["الرقم الشخصي للاب"]=fa?.cpr||""; r["الرقم الشخصي للام"]=mo?.cpr||""; r["اسم الأم"]=mo?fullName(mo):(p.mother_name||"");
+  r["الرقم الشخصي للاب"]=fa?.cpr||""; r["الرقم الشخصي للام"]=mo?.cpr||"";
   r["رقم تسلسل الأب"]=fa?.serial||""; r["رقم تسلسل الأم"]=mo?.serial||"";
   marriagesOf(p.id).forEach(m=>{ const s=S.byId.get(m.spouse_id); r[`زواج ${m.ord}`]= s ? (s.cpr||fullName(s)) : (m.spouse_name||""); });
   r["الرقم المصنف"]=classCode(p);
@@ -1325,7 +1321,6 @@ $("#impFile").onchange=async e=>{
       const p={}; const warn=[];
       FIELDS.forEach(f=>{ if(f.virtual||!f.xl||f.k==="serial") return; let v=get(r,f.xl); p[f.k]= v===""?null:String(v).trim(); });
       p.first_name=String(first).trim();
-      p.mother_name=String(get(r,"اسم الأم")??"").trim()||null;
       p.cpr = cleanCpr(p.cpr)||null; if(p.cpr && p.cpr.length!==9){ warn.push("الرقم الشخصي ليس 9 أرقام — تُرك فارغاً"); p.cpr=null; }
       if(p.cpr && usedCpr.has(p.cpr)){ skipped.push(`سطر ${line}: ${p.first_name} — الرقم الشخصي مسجل مسبقاً`); return; }
       const s=parseInt(get(r,"رقم التسلسل"),10);
