@@ -839,6 +839,7 @@ function roField(label, val){ return `<div class="field"><label>${label}</label>
 
 async function openRecord(id, preset){
   if (S.dirty && !(await ask("تغييرات غير محفوظة","فتح سجل آخر سيلغي التغييرات. متابعة؟"))) return;
+  S.returnTo=null;
   const p = id ? {...S.byId.get(id)} : {...preset};
   if(id && !S.byId.get(id)) { toast("السجل غير موجود",true); return; }
   S.current = p;
@@ -881,7 +882,8 @@ function renderRecordForm(){
       const n=S.curMarriages.filter(m=>m.spouse_id||m.spouse_name).length;
       h+=roField(p.gender==="أنثى"?"عدد مرات الزواج":"عدد الزوجات", n||"")+`</div>`;
       const kids=childrenOf(p);
-      h+=`<div class="field full" style="margin-top:10px"><label>الأبناء (${kids.length})</label><div class="kids">${kids.length?kids.map(k=>`<button type="button" class="chip ${k.life_status==="متوفى"?"dead":""}" data-open="${k.id}">${esc(k.first_name)} <small>(${k.serial})</small></button>`).join(""):'<span class="muted" style="font-size:14px">يظهر الأبناء تلقائياً عند ربطهم بهذا السجل كأب أو أم</span>'}</div></div>`;
+      h+=`<div class="field full" style="margin-top:10px"><label>الأبناء (${kids.length})</label><div class="kids">${kids.length?kids.map(k=>`<button type="button" class="chip ${k.life_status==="متوفى"?"dead":""}" data-open="${k.id}">${esc(k.first_name)} <small>(${k.serial})</small></button>`).join(""):'<span class="muted" style="font-size:14px">لا يوجد أبناء مسجلون بعد</span>'}
+        ${canEdit()&&p.id?`<button type="button" class="btn small" data-addkid="ذكر">+ إضافة ابن</button><button type="button" class="btn small" data-addkid="أنثى">+ إضافة ابنة</button>`:""}</div></div>`;
     } else if(s==="h"){
       h+=`<textarea class="inp" id="f_history_notes" name="history_notes" maxlength="8000" aria-label="الملاحظات التاريخية" placeholder="معلومات تاريخية عن صاحب الملف…">${esc(p.history_notes||"")}</textarea>`;
     } else {
@@ -947,6 +949,7 @@ $("#recForm").addEventListener("click", e=>{
   const pk=e.target.closest("[data-pick]"); if(pk && !pk.disabled){ openPicker(pk.dataset.pick); return; }
   const cl=e.target.closest("[data-clear]"); if(cl && !cl.disabled){ readForm(); setLink(cl.dataset.clear, null); return; }
   const op=e.target.closest("[data-open]"); if(op){ openRecord(+op.dataset.open); return; }
+  const ak=e.target.closest("[data-addkid]"); if(ak){ addChild(ak.dataset.addkid); return; }
   if(e.target.id==="photoDel"){ S.photoBlob=null; S.photoRemoved=true; setDirty(true); showPhoto(); }
 });
 $("#recForm").addEventListener("change", async e=>{
@@ -1093,7 +1096,25 @@ async function saveRecord(){
   finally{ saving=false; $$("#rSave,#rSaveExit").forEach(b=>b.disabled=false); }
 }
 $("#rSave").onclick=async()=>{ if(await saveRecord()) renderRecordForm(); };
-$("#rSaveExit").onclick=async()=>{ if(await saveRecord()) go("menu"); };
+$("#rSaveExit").onclick=async()=>{ if(await saveRecord()){ const back=S.returnTo; S.returnTo=null; if(back && S.byId.get(back)) openRecord(back); else go("menu"); } };
+// إضافة ابن/ابنة من سجل الوالد: سجل جديد برقم تسلسل تلقائي، مربوط بالوالدين ومعبّأ منهما
+async function addChild(g){
+  const par=S.current; if(!par || !par.id) return;
+  if(S.dirty){ if(!(await ask("تغييرات غير محفوظة","احفظ سجل الوالد أولاً؟",{okText:"حفظ ومتابعة"}))) return; if(!(await saveRecord())) return; }
+  const parent=S.byId.get(par.id);
+  const base={serial:nextSerial(), gender:g, life_status:"على قيد الحياة", family:parent.family, family_branch:parent.family_branch, kunya:parent.kunya,
+    area:parent.area, governorate:parent.governorate, house_no:parent.house_no, road_no:parent.road_no, block_no:parent.block_no, apartment_no:parent.apartment_no, phone:parent.phone};
+  await openRecord(null, base);
+  S.returnTo=parent.id;
+  if(parent.gender==="أنثى"){
+    setLink("mother_id", parent);
+    const hus=[]; S.marriages.forEach(m=>{ if(m.person_id===parent.id&&m.spouse_id) hus.push(m.spouse_id); if(m.spouse_id===parent.id) hus.push(m.person_id); });
+    const men=[...new Set(hus)].map(i=>S.byId.get(i)).filter(x=>x && x.gender!=="أنثى");
+    if(men.length===1){ readForm(); setLink("father_id", men[0]); }
+  } else setLink("father_id", parent);
+  $("#crumb").textContent=`${g==="أنثى"?"ابنة جديدة":"ابن جديد"} لـ${parent.first_name} — رقم التسلسل ${base.serial}`;
+  setTimeout(()=>{ toast(`رقم التسلسل ${base.serial} — اكتب الاسم ثم «حفظ وخروج» للرجوع إلى سجل ${parent.first_name}`); $("#f_first_name")?.focus(); },120);
+}
 $("#rBack").onclick=()=>go(S.lastList||"list");
 $("#rTree").onclick=async()=>{ if(S.dirty && !(await ask("تغييرات غير محفوظة","هل تريد الخروج بدون حفظ؟"))) return; setDirty(false); go("tree", S.current.id); };
 $("#rDelete").onclick=async()=>{
