@@ -1485,7 +1485,7 @@ function showFamily(id){
     while(gen.length && n<=10){ const next=gen.flatMap(x=>childrenOf(x)).filter(x=>!seen.has(x.id)); next.forEach(x=>seen.add(x.id)); if(next.length) deeper.push([n,next]); gen=next; n++; } }
   const genTitle=n=>n===3?"أبناء الأحفاد":n===4?"أحفاد الأحفاد":`الجيل ${n}`;
   // يوضح من أي فرع جاء: «ابن فلان» أو «بنت فلانة» بحسب الوالد الذي هو من ذرية الشخص
-  const viaNote=(x,prev)=>{ const par=[x.father_id,x.mother_id].map(i=>S.byId.get(i)).find(q=>q&&prev.some(y=>y.id===q.id)); return par?(isM(x)?"ابن ":"بنت ")+par.first_name:""; };
+  const viaNote=(x,prev)=>{ const par=[x.father_id,x.mother_id].map(i=>S.byId.get(i)).find(q=>q&&prev.some(y=>y.id===q.id)); return [descChain(x,p.id), par?"من "+par.first_name:""].filter(Boolean).join(" · "); };
   if(grand.length) groups.push(famGroup("الأحفاد",grand.map(x=>famMini(x,viaNote(x,kids)))));
   deeper.forEach(([n,list],i)=>{ const prev=i===0?grand:deeper[i-1][1]; groups.push(famGroup(genTitle(n),list.map(x=>famMini(x,viaNote(x,prev))))); });
   h+=`<div class="fam-grid">${groups.join("")}</div>`;
@@ -1523,12 +1523,15 @@ function ancestorsOf(id){
 }
 const isM=p=>p && p.gender!=="أنثى";
 function sideWord(p){ return isM(p)?"الأب":"الأم"; }
+// النسب إلى الجد: «ولد ولد ولد» أو «بنت ولد» … بحسب جنس كل حلقة من الشخص صعوداً إلى الجد
+function descChainWords(path){ return path.slice(0,-1).map(id=>isM(S.byId.get(id))?"ولد":"بنت").join(" "); }
+function descChain(x, ancId){ const pth=ancestorsOf(x.id).get(ancId); return pth?descChainWords(pth):""; }
 function uncleWord(parentOfRef, sibling){ return isM(parentOfRef) ? (isM(sibling)?"عم":"عمة") : (isM(sibling)?"خال":"خالة"); }
 // يعيد وصف علاقة A بالنسبة إلى B: «A هو ___ B»
 function kinTerm(A,B,pa,pb){
   const da=pa.length-1, db=pb.length-1, m=isM(A), P=i=>S.byId.get(pa[i]), Q=i=>S.byId.get(pb[i]);
   if(da===0){ if(db===1) return m?"الأب":"الأم"; if(db===2) return (m?"الجد":"الجدة")+" "+(isM(Q(1))?"لأب":"لأم"); if(db===3) return (m?"جد ":"جدة ")+sideWord(Q(1)); return (m?"جد":"جدة")+" من الجيل "+db; }
-  if(db===0){ if(da===1) return m?"الابن":"الابنة"; if(da===2) return m?"الحفيد":"الحفيدة"; if(da===3) return m?"ابن الحفيد":"ابنة الحفيد"; return (m?"حفيد":"حفيدة")+" من الجيل "+da; }
+  if(db===0) return descChainWords(pa);
   if(da===1&&db===1){ const sf=A.father_id&&A.father_id===B.father_id, sm=A.mother_id&&A.mother_id===B.mother_id;
     return sf&&sm ? (m?"الأخ الشقيق":"الأخت الشقيقة") : sf ? (m?"الأخ لأب":"الأخت لأب") : (m?"الأخ لأم":"الأخت لأم"); }
   // القرابة عن طريق أخ أو أخت مهما بعدت: عم/عمة/خال/خالة، وأبناؤهم أبناء عم/خال، ونسلهم أبناء الأخ/الأخت
