@@ -267,6 +267,15 @@ table.tbl{width:100%;border-collapse:collapse;font-size:15px}
 .scard .sc-stats span{color:rgba(255,255,255,.75)}
 .scard .sc-stats span+span{border-inline-start:1px solid rgba(255,255,255,.2)}
 .scard .sc-stats b{color:var(--band)}
+/* الزوج/الزوجة من خارج العائلة: لون بنفسجي مميز */
+.scard.out{--band:#c9b8ff}
+.scard.out .sc-face{background:linear-gradient(160deg,rgba(124,92,230,.55),rgba(74,52,160,.45));border:1.5px solid rgba(201,184,255,.8)}
+.scard.out .sc-av{background-color:rgba(201,184,255,.3);border-color:#e3d9ff}
+.scard.vcard:not(.out) .sc-face{border-style:dashed}
+.scard.vcard .sc-av{border-style:dashed}
+.sc-badge{position:absolute;top:7px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:11px;font-weight:800;background:#fff;color:#4a34a0;border-radius:999px;padding:2px 10px}
+.scard:not(.vcard).out .sc-band{height:40px}
+.fam-name.out{border-color:#c9b8ff!important;background:rgba(124,92,230,.45)!important}
 .scard .sc-back b{color:#fff}
 .scard .sc-row{border-bottom:1px dashed rgba(255,255,255,.25)}
 .scard .sc-row span{color:rgba(255,255,255,.7)}
@@ -1271,6 +1280,35 @@ function fillAreaFilter(){
   const cur=$("#qArea").value, areas=[...new Set(S.people.map(p=>p.area).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ar"));
   $("#qArea").innerHTML=`<option value="">كل المناطق</option>`+areas.map(a=>`<option ${a===cur?"selected":""}>${esc(a)}</option>`).join("");
 }
+/* ---------- الأزواج من خارج العائلة ---------- */
+// العائلة الأساسية = الأكثر تكراراً في السجل (النشابة)
+function homeFamily(){ const c=new Map(); S.people.forEach(p=>{ if(p.family) c.set(p.family,(c.get(p.family)||0)+1); }); let best="النشابة",n=0; c.forEach((v,k)=>{ if(v>n){ n=v; best=k; } }); return best; }
+function isOutsider(p){ return !!p && !!p.family && norm(p.family)!==norm(homeFamily()); }
+// الأزواج غير المسجلين كأشخاص: المكتوبون بالاسم في الزواج، أو المستنتجون من اسم أب الأبناء (مثل أبناء أم من العائلة وأبوهم غير مسجل)
+function nameSpousesOf(p){
+  const home=norm(homeFamily()), out=[], male=isM(p);
+  S.marriages.forEach(m=>{ if(m.person_id===p.id && !m.spouse_id && m.spouse_name){ const nm=m.spouse_name.trim(), first=norm(nm.split(/\s+/)[0]);
+    const kids=childrenOf(p).filter(k=>male ? (!k.mother_id && norm(k.mother_first||k.mother_name||"").split(" ")[0]===first) : (!k.father_id && norm(k.father_name||"")===first));
+    out.push({name:nm, outsider:!norm(nm).includes(home), kids}); } });
+  if(!male){ const grp=new Map();
+    S.people.forEach(k=>{ if(k.mother_id===p.id && !k.father_id && k.father_name){ const fam=k.family&&norm(k.family)!==home?k.family:"";
+      const key=[k.father_name,k.grandfather_name,fam].filter(Boolean).join(" "); const g=grp.get(key)||{name:key, outsider:!!fam, kids:[]}; g.kids.push(k); grp.set(key,g); } });
+    grp.forEach(g=>{ const first=norm(g.name.split(" ")[0]); if(!out.some(o=>norm(o.name.split(/\s+/)[0])===first)) out.push(g); }); }
+  return out;
+}
+function outsideSpouseEntries(){ const res=[]; S.people.forEach(p=>nameSpousesOf(p).forEach(s=>res.push({...s, partner:p}))); return res; }
+function spouseCardHtml(s){
+  const p=s.partner, f=isM(p), init=esc((s.name||"؟").trim().charAt(0));
+  return `<div class="scard vcard ${s.outsider?"out":""} ${f?"f":""}" data-card="${p.id}" tabindex="0" role="button" aria-label="${esc(s.name)} — ${f?"زوجة":"زوج"} ${esc(fullName(p))}">
+  <div class="sc-inner"><div class="sc-face sc-front">
+    <div class="sc-band"><span class="sc-badge">${s.outsider?(f?"زوجة من خارج العائلة":"زوج من خارج العائلة"):"غير مسجل في السجل"}</span></div>
+    <span class="sc-av" aria-hidden="true">${init}</span>
+    <span class="sc-name">${esc(s.name)}</span>
+    <span class="sc-fam">${f?"زوجة":"زوج"}: ${esc([p.first_name,p.father_name,p.grandfather_name].filter(Boolean).join(" "))} #${p.serial}</span>
+    <div class="sc-chips"><span>غير مسجل كسجل مستقل</span></div>
+    <div class="sc-stats"><span><b>${s.kids.length}</b>أبناء</span><span><b>1</b>${f?"زوجة":"زوج"}</span><span><b>${s.kids.reduce((n,k)=>n+childrenOf(k).length,0)}</b>أحفاد</span></div>
+  </div></div></div>`;
+}
 function filtered(){
   const q=norm($("#qText").value), by=$("#qBy").value, g=$("#qGender").value, l=$("#qLife").value, a=$("#qArea").value;
   const momOf=p=>{ const m=S.byId.get(p.mother_id); return norm(m?fullName(m):([p.mother_first,p.mother_father,p.mother_grandfather,p.mother_family].filter(Boolean).join(" ")||p.mother_name||"")); };
@@ -1281,6 +1319,7 @@ function filtered(){
   const spMap=new Map(); const addSp=(id,n)=>{ if(!n) return; const a=spMap.get(id)||[]; a.push(norm(n)); spMap.set(id,a); };
   if(q) S.marriages.forEach(m=>{ const sp=S.byId.get(m.spouse_id), pp=S.byId.get(m.person_id);
     addSp(m.person_id, sp?fullName(sp):m.spouse_name); if(sp&&pp) addSp(sp.id, fullName(pp)); });
+  if(q) S.people.forEach(p=>{ if(!isM(p)) nameSpousesOf(p).forEach(s=>addSp(p.id,s.name)); });
   const spHit=p=>(spMap.get(p.id)||[]).some(n=>{ const toks=n.split(" "); return words.every(w=>toks.some(t=>t.startsWith(w))); });
   const nameHit=p=>{ const chain=[p.first_name,p.father_name,p.grandfather_name,p.grandfather2_name,p.grandfather3_name,p.grandfather4_name,p.family,p.family_branch,p.kunya].filter(Boolean).map(norm).join(" ");
     const toks=chain.split(" "); return words.every(w=>toks.some(t=>t.startsWith(w))); };
@@ -1303,10 +1342,11 @@ function cardHtml(p){
   const mName=mother?fullName(mother):([p.mother_first,p.mother_father,p.mother_family].filter(Boolean).join(" ")||p.mother_name||"");
   const chips=[age!==""?`${age} سنة`:"", p.area||"", p.blood_type||"", dead?(f?"رحمها الله":"رحمه الله"):""].filter(Boolean);
   const init=esc((p.first_name||"؟").trim().charAt(0));
-  return `<div class="scard ${f?"f":""} ${dead?"dead":""}" data-card="${p.id}" tabindex="0" role="button" aria-label="${esc(fullName(p))}">
+  const out=isOutsider(p) && S.marriages.some(m=>m.person_id===p.id||m.spouse_id===p.id);
+  return `<div class="scard ${f?"f":""} ${dead?"dead":""} ${out?"out":""}" data-card="${p.id}" tabindex="0" role="button" aria-label="${esc(fullName(p))}${out?" — من خارج العائلة":""}">
   <div class="sc-inner">
     <div class="sc-face sc-front">
-      <div class="sc-band"><span class="sc-ser">#${p.serial}</span><button type="button" class="sc-flip" data-flip aria-label="قلب البطاقة">↻</button></div>
+      <div class="sc-band"><span class="sc-ser">#${p.serial}</span>${out?`<span class="sc-badge">${f?"زوجة":"زوج"} من خارج العائلة</span>`:""}<button type="button" class="sc-flip" data-flip aria-label="قلب البطاقة">↻</button></div>
       <span class="sc-av" ${p.photo_path?`data-photo="${esc(p.photo_path)}"`:""} aria-hidden="true">${init}</span>
       <span class="sc-name">${esc([p.first_name,p.father_name,p.grandfather_name].filter(Boolean).join(" "))}</span>
       <span class="sc-fam">${esc([p.family?`عائلة ${p.family}`:"", p.kunya||""].filter(Boolean).join(" · "))}</span>
@@ -1318,7 +1358,8 @@ function cardHtml(p){
       <b style="font-size:15px;margin-bottom:6px;padding-inline-end:34px">${esc(p.first_name)}</b>
       <div class="sc-row"><span>الأب</span><b>${esc(fName||"—")}</b></div>
       <div class="sc-row"><span>الأم</span><b>${esc(mName||"—")}</b></div>
-      ${(()=>{ const sp=[]; S.marriages.forEach(m=>{ if(m.person_id===p.id){ const s=S.byId.get(m.spouse_id); sp.push(s?[s.first_name,s.father_name].filter(Boolean).join(" "):(m.spouse_name||"")); } else if(m.spouse_id===p.id){ const s=S.byId.get(m.person_id); if(s) sp.push([s.first_name,s.father_name].filter(Boolean).join(" ")); } });
+      ${(()=>{ const sp=[]; S.marriages.forEach(m=>{ if(m.person_id===p.id && m.spouse_id){ const s=S.byId.get(m.spouse_id); if(s) sp.push([s.first_name,s.father_name].filter(Boolean).join(" ")); } else if(m.spouse_id===p.id){ const s=S.byId.get(m.person_id); if(s) sp.push([s.first_name,s.father_name].filter(Boolean).join(" ")); } });
+        nameSpousesOf(p).forEach(s=>sp.push(s.name));
         const list=sp.filter(Boolean); return list.length?`<div class="sc-row"><span>${f?"الزوج":"الزوجة"}</span><b>${esc(list.join("، "))}</b></div>`:""; })()}
       <div class="sc-kids">${kids.slice(0,5).map(k=>avatarHtml(k,"sm")).join("")}<em>${kids.length?(kids.length>5?`+${kids.length-5} `:"")+"الأبناء":"لا أبناء مسجلون"}</em></div>
       ${p.phone||p.mobile?`<div class="sc-phone">${esc(p.phone||p.mobile)}</div>`:""}
@@ -1337,14 +1378,20 @@ async function hydratePhotos(root){
 function renderList(){
   fillAreaFilter();
   const rows=filtered();
-  $("#listCount").textContent=`${rows.length} من ${S.people.length} سجل`;
-  $("#listBody").innerHTML = rows.length ? rows.slice(0,500).map(cardHtml).join("")
+  // عند البحث بالاسم أو بالزوج: بطاقات بلون مختلف للأزواج غير المسجلين (خاصة من خارج العائلة)
+  const q=norm($("#qText").value), by=$("#qBy").value, g=$("#qGender").value, words=q.split(" ").filter(Boolean);
+  const vs=(q && (by===""||by==="spouse")) ? outsideSpouseEntries().filter(s=>{ const toks=norm(s.name).split(" "); return words.every(w=>toks.some(t=>t.startsWith(w))) && (!g || g===(isM(s.partner)?"أنثى":"ذكر")); }) : [];
+  vs.sort((a,b)=>b.outsider-a.outsider);
+  $("#listCount").textContent=`${rows.length} من ${S.people.length} سجل`+(vs.length?` · ${vs.length} ${vs.length===1?"زوج/زوجة":"أزواج/زوجات"} غير مسجلين`:"");
+  const all=vs.map(spouseCardHtml).concat(rows.slice(0,500).map(cardHtml));
+  $("#listBody").innerHTML = all.length ? all.join("")
     : `<div class="empty" style="grid-column:1/-1">${S.people.length?"لا توجد نتائج مطابقة":"لا توجد سجلات بعد — ابدأ بـ «إضافة سجل»"}</div>`;
   hydratePhotos($("#listBody"));
 }
 ["#qText","#qBy","#qGender","#qLife","#qArea"].forEach(s=>$(s).addEventListener("input",renderList));
 $("#listBody").addEventListener("click",e=>{
   const card=e.target.closest("[data-card]"); if(!card) return; const id=+card.dataset.card;
+  if(card.classList.contains("vcard")) return showFamily(id);
   if(e.target.closest("[data-flip]")){ card.classList.toggle("flipped"); hydratePhotos(card); return; }
   const act=e.target.closest("[data-act]")?.dataset.act;
   if(act==="rec") return openRecord(id);
@@ -1416,7 +1463,8 @@ function showFamily(id){
   const father=S.byId.get(p.father_id), mother=S.byId.get(p.mother_id);
   const motherName=[p.mother_first,p.mother_father,p.mother_grandfather,p.mother_family].filter(Boolean).join(" ")||p.mother_name||"";
   const sib=siblingsOf(p), kids=childrenOf(p), grand=kids.flatMap(k=>childrenOf(k));
-  const spouses=[]; S.marriages.forEach(m=>{ if(m.person_id===p.id){ const sp=S.byId.get(m.spouse_id); spouses.push(sp?famMini(sp):`<span class="fam-name">${esc(m.spouse_name||"")}</span>`); } else if(m.spouse_id===p.id){ const sp=S.byId.get(m.person_id); if(sp) spouses.push(famMini(sp)); } });
+  const spouses=[]; S.marriages.forEach(m=>{ if(m.person_id===p.id && m.spouse_id){ const sp=S.byId.get(m.spouse_id); if(sp) spouses.push(famMini(sp,isOutsider(sp)?"من خارج العائلة":"")); } else if(m.spouse_id===p.id){ const sp=S.byId.get(m.person_id); if(sp) spouses.push(famMini(sp,isOutsider(sp)?"من خارج العائلة":"")); } });
+  nameSpousesOf(p).forEach(s=>spouses.push(`<span class="fam-name ${s.outsider?"out":""}">${esc(s.name)}${s.outsider?' <small>(من خارج العائلة)</small>':""}</span>`));
   const gps=[]; [[father,"أب الأب","أم الأب"],[mother,"أب الأم","أم الأم"]].forEach(([par,a,b])=>{ if(!par) return; const gf=S.byId.get(par.father_id), gm=S.byId.get(par.mother_id); if(gf) gps.push(famMini(gf,a)); if(gm) gps.push(famMini(gm,b)); });
   const fs=father?siblingsOf(father).map(o=>o.x):[], ms=mother?siblingsOf(mother).map(o=>o.x):[];
   let h=`<div class="fam-head">${avatarHtml(p)}<div><h4>${esc(fullName(p))}</h4><div class="muted" style="font-size:13px">#${p.serial}${ageOf(p)!==""?` · ${ageOf(p)} سنة`:""}${p.area?" · "+esc(p.area):""}${p.life_status==="متوفى"?" · متوفى":""}</div></div></div>`;
