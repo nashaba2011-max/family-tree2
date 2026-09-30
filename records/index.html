@@ -1255,12 +1255,16 @@ function filtered(){
   const q=norm($("#qText").value), by=$("#qBy").value, g=$("#qGender").value, l=$("#qLife").value, a=$("#qArea").value;
   const momOf=p=>{ const m=S.byId.get(p.mother_id); return norm(m?fullName(m):([p.mother_first,p.mother_father,p.mother_grandfather,p.mother_family].filter(Boolean).join(" ")||p.mother_name||"")); };
   const dadOf=p=>{ const f=S.byId.get(p.father_id); return norm(f?fullName(f):[p.father_name,p.grandfather_name].filter(Boolean).join(" ")); };
+  // الاسم الكامل: كل كلمة يكتبها المستخدم يجب أن تكون ضمن سلسلة الاسم (الاسم، الأب، الأجداد الأربعة، العائلة، الفرع، الكنية)
+  const words=q.split(" ").filter(Boolean);
+  const nameHit=p=>{ const chain=[p.first_name,p.father_name,p.grandfather_name,p.grandfather2_name,p.grandfather3_name,p.grandfather4_name,p.family,p.family_branch,p.kunya].filter(Boolean).map(norm).join(" ");
+    const toks=chain.split(" "); return words.every(w=>toks.some(t=>t.startsWith(w))); };
   const hit=p=>{
     if(!q) return true;
     if(by==="mother") return momOf(p).includes(q);
     if(by==="father") return dadOf(p).includes(q);
-    if(by==="name") return norm(fullName(p)).includes(q);
-    return norm(fullName(p)).includes(q) || momOf(p).includes(q) || String(p.serial)===q || (p.cpr||"").includes(q) || (p.phone||"").includes(q) || (p.mobile||"").includes(q);
+    if(by==="name") return nameHit(p);
+    return nameHit(p) || momOf(p).includes(q) || String(p.serial)===q || (p.cpr||"").includes(q) || (p.phone||"").includes(q) || (p.mobile||"").includes(q);
   };
   return S.people.filter(p=>(!g||p.gender===g)&&(!l||p.life_status===l)&&(!a||p.area===a)&&hit(p));
 }
