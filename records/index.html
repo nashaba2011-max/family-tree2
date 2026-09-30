@@ -1523,15 +1523,11 @@ function kinTerm(A,B,pa,pb){
   if(db===0){ if(da===1) return m?"الابن":"الابنة"; if(da===2) return m?"الحفيد":"الحفيدة"; if(da===3) return m?"ابن الحفيد":"ابنة الحفيد"; return (m?"حفيد":"حفيدة")+" من الجيل "+da; }
   if(da===1&&db===1){ const sf=A.father_id&&A.father_id===B.father_id, sm=A.mother_id&&A.mother_id===B.mother_id;
     return sf&&sm ? (m?"الأخ الشقيق":"الأخت الشقيقة") : sf ? (m?"الأخ لأب":"الأخت لأب") : (m?"الأخ لأم":"الأخت لأم"); }
-  if(da===1&&db===2) return uncleWord(Q(1),A);
-  if(da===2&&db===1) return (m?"ابن ":"ابنة ")+(isM(P(1))?"الأخ":"الأخت");
-  if(da===2&&db===2) return (m?"ابن ":"ابنة ")+uncleWord(Q(1),P(1));
-  if(da===1&&db===3) return uncleWord(Q(2),A)+" "+sideWord(Q(1));
-  if(da===3&&db===1) return (m?"حفيد ":"حفيدة ")+(isM(P(2))?"الأخ":"الأخت");
-  if(da===2&&db===3) return (m?"ابن ":"ابنة ")+uncleWord(Q(2),P(1))+" "+sideWord(Q(1));
-  if(da===3&&db===2) return (m?"حفيد ":"حفيدة ")+uncleWord(Q(1),P(2));
-  if(da===3&&db===3) return m?"قريب من أبناء العمومة (الدرجة الثانية)":"قريبة من أبناء العمومة (الدرجة الثانية)";
-  return m?"قريب من بعيد":"قريبة من بعيد";
+  // القرابة عن طريق أخ أو أخت مهما بعدت: عم/عمة/خال/خالة، وأبناؤهم أبناء عم/خال، ونسلهم أبناء الأخ/الأخت
+  // (الجهة تحدد من جنس الجد الذي هو أخو القريب: إن كان رجلاً فعم/عمة، وإن كانت امرأة فخال/خالة)
+  if(da===1) return uncleWord(Q(db-1),A);
+  if(db===1) return (m?"ابن ":"ابنة ")+(isM(P(da-1))?"الأخ":"الأخت");
+  return (m?"ابن ":"ابنة ")+uncleWord(Q(db-1),P(da-1));
 }
 function relation(aId,bId){
   if(aId===bId) return {same:true};
