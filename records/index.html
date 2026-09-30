@@ -133,6 +133,34 @@ table.tbl{width:100%;border-collapse:collapse;font-size:15px}
 .tag{display:inline-block;font-size:12px;border-radius:999px;padding:0 8px;border:1px solid var(--line);color:var(--ink-2)}
 .tag.dead{border-color:var(--ink-3);background:var(--tan-l)}
 .empty{text-align:center;padding:30px 12px;color:var(--ink-3)}
+/* بطاقة الأسرة الزجاجية */
+#dFam{background:radial-gradient(circle at 10% 10%,rgba(124,196,182,.9),transparent 40%),radial-gradient(circle at 90% 35%,rgba(217,165,91,.85),transparent 42%),radial-gradient(circle at 35% 100%,rgba(176,112,138,.6),transparent 45%),#1f3a33;color:#fff;border-radius:24px}
+#dFam .dlg-h{background:rgba(255,255,255,.08);border-bottom:1px solid rgba(255,255,255,.25);backdrop-filter:blur(10px)}
+#dFam .dlg-h h3{color:#fff}
+#dFam .dlg-f{border-top:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06)}
+#dFam .btn{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.5);color:#fff}
+#dFam .btn.primary{background:#fff;color:#1f3a33;border-color:#fff}
+#dFam .fam-head{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:14px;backdrop-filter:blur(14px)}
+#dFam .fam-head .av{width:84px;height:84px;border:3px solid rgba(255,255,255,.8);box-shadow:0 0 0 5px rgba(255,255,255,.15)}
+#dFam .fam-head h4{color:#fff;font-size:20px}
+#dFam .fam-head .muted{color:rgba(255,255,255,.8)!important}
+#dFam .fam-grp{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);border-radius:16px;padding:10px 12px;backdrop-filter:blur(12px)}
+#dFam .fam-grp h5{color:#fff}
+#dFam .fam-grp h5::after{background:rgba(255,255,255,.25)}
+#dFam .fam-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin-top:10px}
+#dFam .fam-grid .fam-grp{margin-top:0}
+#dFam .mini{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.45);color:#fff}
+#dFam .mini.f{border-color:rgba(240,169,196,.9)}
+#dFam .mini small{color:rgba(255,255,255,.75)}
+#dFam .mini:hover{background:rgba(255,255,255,.3)}
+#dFam .fam-name{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.35);color:#fff}
+#dFam .fam-none{color:rgba(255,255,255,.6)}
+#dFam .linkhint{margin-top:8px;font-size:13px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;color:rgba(255,255,255,.9)}
+#dFam .linkhint button{background:#fff;color:#1f3a33;border:0;border-radius:999px;padding:3px 12px;font-weight:700;cursor:pointer}
+/* أداة ربط الأقارب */
+.lk-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+.lk-row .arrow{color:var(--ink-3);font-size:13px}
+.lk-row .cands{display:flex;flex-wrap:wrap;gap:6px}
 /* بطاقة الأسرة السريعة */
 .fam-head{display:flex;align-items:center;gap:14px;margin-bottom:12px}
 .fam-head .av{width:70px;height:70px;font-size:28px}
@@ -370,6 +398,7 @@ dialog::backdrop{background:rgba(30,28,18,.55)}
         <button class="tile" data-go="list" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>السجلات والبحث<small>بحث بالاسم أو الرقم</small></button>
         <button class="tile" data-go="tree" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2.5" width="6" height="5" rx="1"/><rect x="2.5" y="16.5" width="6" height="5" rx="1"/><rect x="15.5" y="16.5" width="6" height="5" rx="1"/><path d="M12 7.5V12M5.5 16.5V12h13v4.5"/></svg>شجرة العائلة<small>ترسم تلقائياً من الأب والأم</small></button>
         <button class="tile" data-go="rel" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="7" r="3"/><circle cx="18" cy="7" r="3"/><path d="M6 10v4a6 6 0 0 0 12 0v-4"/><circle cx="12" cy="20" r="1.5"/></svg>صلة القرابة<small>كيف يرتبط شخصان ببعض</small></button>
+        <button class="tile" data-go="links" data-edit type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>ربط الأقارب<small>اقتراحات لربط الأبناء بآبائهم</small></button>
         <button class="tile" data-go="lookups" data-admin type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/></svg>القوائم والرموز<small>العائلة، الفرع، المناطق…</small></button>
         <button class="tile" data-go="users" data-admin type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.6 6.5-5.6s5.9 2 6.5 5.6"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.6c2 .7 3.2 2.5 3.5 5.4"/></svg>المستخدمون<small>من يدخل ومن يعدّل</small></button>
         <button class="tile" data-go="import" data-admin type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0-4-4m4 4 4-4"/><path d="M4 17v3h16v-3"/></svg>استيراد من Excel<small>بنفس أعمدة ملف الحقول</small></button>
@@ -440,6 +469,13 @@ dialog::backdrop{background:rgba(30,28,18,.55)}
       </div>
       <p class="muted" style="font-size:13px;margin:0 0 8px">الأبناء يُربطون تلقائياً من حقلي «الأب» و«الأم» في كل سجل. الإطار المتقطع = متوفى.</p>
       <div class="tree" id="treeBox"></div>
+    </section>
+
+    <!-- ربط الأقارب -->
+    <section id="vLinks" hidden>
+      <div style="text-align:center;margin:6px 0 10px"><span class="title-box">ربط الأقارب</span></div>
+      <p class="muted" style="font-size:14px;text-align:center;margin:0 0 12px">أشخاص مكتوب اسم أبيهم ولم يُربطوا بسجله. اختر الأب الصحيح لربطه، فيظهر في الشجرة وبطاقة الأسرة وصلة القرابة.</p>
+      <div id="lkList"></div>
     </section>
 
     <!-- صلة القرابة -->
@@ -678,8 +714,8 @@ function ask(title, msg, {input=false, value="", type="text", okText="موافق
 function loadScript(src){ return new Promise((res,rej)=>{ if(document.querySelector(`script[src="${src}"]`)) return res(); const s=document.createElement("script"); s.src=src; s.onload=res; s.onerror=()=>rej(new Error("تعذر تحميل مكتبة Excel")); document.head.append(s); }); }
 
 /* ================== التنقل ================== */
-const VIEWS = {menu:"#vMenu",new:"#vNew",record:"#vRecord",list:"#vList",tree:"#vTree",lookups:"#vLookups",users:"#vUsers",import:"#vImport",rel:"#vRel",loading:"#vLoading"};
-const CRUMBS = {menu:"القائمة الرئيسية",new:"إضافة سجل",record:"السجل",list:"السجلات والبحث",tree:"شجرة العائلة",lookups:"القوائم والرموز",users:"المستخدمون",import:"استيراد من Excel",rel:"صلة القرابة",loading:""};
+const VIEWS = {menu:"#vMenu",new:"#vNew",record:"#vRecord",list:"#vList",tree:"#vTree",lookups:"#vLookups",users:"#vUsers",import:"#vImport",rel:"#vRel",links:"#vLinks",loading:"#vLoading"};
+const CRUMBS = {menu:"القائمة الرئيسية",new:"إضافة سجل",record:"السجل",list:"السجلات والبحث",tree:"شجرة العائلة",lookups:"القوائم والرموز",users:"المستخدمون",import:"استيراد من Excel",rel:"صلة القرابة",links:"ربط الأقارب",loading:""};
 async function go(v, arg){
   if (S.dirty && v!=="record" && !(await ask("تغييرات غير محفوظة","هل تريد الخروج بدون حفظ؟",{okText:"خروج بدون حفظ"}))) return;
   if (v!=="record") setDirty(false);
@@ -691,6 +727,7 @@ async function go(v, arg){
   if(v==="list"){ S.lastList="list"; renderList(); }
   if(v==="tree"){ S.lastList="tree"; renderTreeRoots(arg); }
   if(v==="rel"){ if(arg) REL.a=arg; renderRel(); }
+  if(v==="links") renderLinks();
   if(v==="lookups") renderLookups();
   if(v==="users") renderUsers();
   if(v==="import") resetImport();
@@ -1312,27 +1349,70 @@ function siblingsOf(p){
 }
 function famMini(x,note=""){ return `<button type="button" class="mini ${isM(x)?"":"f"}" data-fam="${x.id}">${avatarHtml(x,"sm")}<span><b>${esc(x.first_name)}</b><small>#${x.serial}${x.birth_date?" · "+x.birth_date.slice(0,4):""}${x.life_status==="متوفى"?" · متوفى":""}${note?" · "+note:""}</small></span></button>`; }
 function famGroup(title, items){ return `<div class="fam-grp"><h5>${title} (${items.length})</h5><div class="fam-list">${items.length?items.join(""):'<span class="fam-none">لا يوجد</span>'}</div></div>`; }
+function fatherCandidates(p){
+  if(!p.father_name || p.father_id) return [];
+  const desc=new Set(); (function walk(x){ childrenOf(x).forEach(k=>{ if(!desc.has(k.id)){ desc.add(k.id); walk(k); } }); })(p);
+  return S.people.filter(c=>c.id!==p.id && !desc.has(c.id) && c.gender!=="أنثى" && norm(c.first_name)===norm(p.father_name)
+      && (!c.father_name || !p.grandfather_name || norm(c.father_name)===norm(p.grandfather_name)))
+    .sort((a,b)=>((b.father_name&&p.grandfather_name&&norm(b.father_name)===norm(p.grandfather_name))?1:0)-((a.father_name&&p.grandfather_name&&norm(a.father_name)===norm(p.grandfather_name))?1:0) || a.serial-b.serial);
+}
+// ربط الابن بأبيه، وإكمال ما ينقص في سجل الأب من اسم أبيه وجده وجنسه
+async function linkFather(childId, fatherId){
+  const c=S.byId.get(childId), f=S.byId.get(fatherId); if(!c||!f) return false;
+  try{
+    const {data,error}=await db.from("fr_people").update({father_id:f.id}).eq("id",c.id).select().single(); if(error) throw error; Object.assign(c,data);
+    const fu={}; if(!f.father_name && c.grandfather_name) fu.father_name=c.grandfather_name; if(!f.grandfather_name && c.grandfather2_name) fu.grandfather_name=c.grandfather2_name; if(!f.gender) fu.gender="ذكر";
+    if(Object.keys(fu).length){ const r2=await db.from("fr_people").update(fu).eq("id",f.id).select().single(); if(!r2.error) Object.assign(f,r2.data); }
+    setPeople(S.people); toast(`رُبط ${c.first_name} بأبيه ${f.first_name}`); return true;
+  }catch(err){ toast(errMsg(err),true); return false; }
+}
 function showFamily(id){
   const p=S.byId.get(id); if(!p) return; famId=id;
   const father=S.byId.get(p.father_id), mother=S.byId.get(p.mother_id);
   const motherName=[p.mother_first,p.mother_father,p.mother_grandfather,p.mother_family].filter(Boolean).join(" ")||p.mother_name||"";
-  const sib=siblingsOf(p), kids=childrenOf(p);
+  const sib=siblingsOf(p), kids=childrenOf(p), grand=kids.flatMap(k=>childrenOf(k));
   const spouses=[]; S.marriages.forEach(m=>{ if(m.person_id===p.id){ const sp=S.byId.get(m.spouse_id); spouses.push(sp?famMini(sp):`<span class="fam-name">${esc(m.spouse_name||"")}</span>`); } else if(m.spouse_id===p.id){ const sp=S.byId.get(m.person_id); if(sp) spouses.push(famMini(sp)); } });
+  const gps=[]; [[father,"أب الأب","أم الأب"],[mother,"أب الأم","أم الأم"]].forEach(([par,a,b])=>{ if(!par) return; const gf=S.byId.get(par.father_id), gm=S.byId.get(par.mother_id); if(gf) gps.push(famMini(gf,a)); if(gm) gps.push(famMini(gm,b)); });
+  const fs=father?siblingsOf(father).map(o=>o.x):[], ms=mother?siblingsOf(mother).map(o=>o.x):[];
   let h=`<div class="fam-head">${avatarHtml(p)}<div><h4>${esc(fullName(p))}</h4><div class="muted" style="font-size:13px">#${p.serial}${ageOf(p)!==""?` · ${ageOf(p)} سنة`:""}${p.area?" · "+esc(p.area):""}${p.life_status==="متوفى"?" · متوفى":""}</div></div></div>`;
-  h+=famGroup("الأب",father?[famMini(father)]:(p.father_name?[`<span class="fam-name">${esc([p.father_name,p.grandfather_name].filter(Boolean).join(" "))}</span>`]:[]));
-  h+=famGroup("الأم",mother?[famMini(mother)]:(motherName?[`<span class="fam-name">${esc(motherName)}</span>`]:[]));
-  h+=famGroup("الإخوة",sib.filter(o=>isM(o.x)).map(o=>famMini(o.x,o.note)));
-  h+=famGroup("الأخوات",sib.filter(o=>!isM(o.x)).map(o=>famMini(o.x,o.note)));
-  h+=famGroup(p.gender==="أنثى"?"الأزواج":"الزوجات",spouses);
-  h+=famGroup("الأبناء",kids.filter(isM).map(k=>famMini(k)));
-  h+=famGroup("البنات",kids.filter(k=>!isM(k)).map(k=>famMini(k)));
+  let fatherItems=father?[famMini(father)]:(p.father_name?[`<span class="fam-name">${esc([p.father_name,p.grandfather_name].filter(Boolean).join(" "))} <small>(غير مربوط)</small></span>`]:[]);
+  let fg=famGroup("الأب",fatherItems);
+  const cands=canEdit()?fatherCandidates(p):[];
+  if(cands.length) fg=fg.replace(/<\/div><\/div>$/,`</div><div class="linkhint">اربطه بأبيه المسجل: ${cands.slice(0,4).map(c=>`<button type="button" data-linkf="${c.id}">${esc([c.first_name,c.father_name].filter(Boolean).join(" "))} #${c.serial}</button>`).join("")}</div></div>`);
+  const groups=[fg, famGroup("الأم",mother?[famMini(mother)]:(motherName?[`<span class="fam-name">${esc(motherName)}</span>`]:[])),
+    famGroup("الإخوة",sib.filter(o=>isM(o.x)).map(o=>famMini(o.x,o.note))), famGroup("الأخوات",sib.filter(o=>!isM(o.x)).map(o=>famMini(o.x,o.note))),
+    famGroup(p.gender==="أنثى"?"الأزواج":"الزوجات",spouses),
+    famGroup("الأبناء",kids.filter(isM).map(k=>famMini(k))), famGroup("البنات",kids.filter(k=>!isM(k)).map(k=>famMini(k)))];
+  // أقارب إضافيون يظهرون فقط عند وجودهم
+  if(gps.length) groups.push(famGroup("الأجداد",gps));
+  if(fs.filter(isM).length) groups.push(famGroup("الأعمام",fs.filter(isM).map(x=>famMini(x))));
+  if(fs.filter(x=>!isM(x)).length) groups.push(famGroup("العمات",fs.filter(x=>!isM(x)).map(x=>famMini(x))));
+  if(ms.filter(isM).length) groups.push(famGroup("الأخوال",ms.filter(isM).map(x=>famMini(x))));
+  if(ms.filter(x=>!isM(x)).length) groups.push(famGroup("الخالات",ms.filter(x=>!isM(x)).map(x=>famMini(x))));
+  if(grand.length) groups.push(famGroup("الأحفاد",grand.map(x=>famMini(x,S.byId.get(x.father_id)?.id===p.id||S.byId.get(x.mother_id)?.id===p.id?"":"ابن "+(S.byId.get(x.father_id)?.first_name||S.byId.get(x.mother_id)?.first_name||"")))));
+  h+=`<div class="fam-grid">${groups.join("")}</div>`;
   $("#dFamT").textContent=`أسرة ${p.first_name}`; $("#famBody").innerHTML=h;
   if(!$("#dFam").open) $("#dFam").showModal();
   $("#famBody").scrollTop=0; hydratePhotos($("#dFam"));
 }
-$("#famBody").addEventListener("click",e=>{ const b=e.target.closest("[data-fam]"); if(b) showFamily(+b.dataset.fam); });
+$("#famBody").addEventListener("click",async e=>{ const l=e.target.closest("[data-linkf]"); if(l){ l.disabled=true; if(await linkFather(famId,+l.dataset.linkf)){ showFamily(famId); if(!$("#vList").hidden) renderList(); } else l.disabled=false; return; }
+  const b=e.target.closest("[data-fam]"); if(b) showFamily(+b.dataset.fam); });
 $("#famOpen").onclick=()=>{ $("#dFam").close(); openRecord(famId); };
 $("#famRel").onclick=()=>{ $("#dFam").close(); REL.a=famId; REL.b=null; go("rel"); };
+
+function renderLinks(){
+  const rows=S.people.filter(p=>p.father_name && !p.father_id).map(p=>({p,c:fatherCandidates(p)}));
+  const withC=rows.filter(r=>r.c.length), without=rows.length-withC.length;
+  $("#lkList").innerHTML = withC.length ? withC.map(({p,c})=>`<div class="lk-row" data-child="${p.id}">${miniHtml(p)}<span class="arrow">أبوه ←</span><div class="cands">${c.map(x=>`<button type="button" class="btn small" data-lk="${x.id}">${esc([x.first_name,x.father_name,x.grandfather_name].filter(Boolean).join(" "))} #${x.serial}</button>`).join("")}</div></div>`).join("")
+    + (without?`<p class="muted" style="font-size:13px">${without} شخص مكتوب اسم أبيه لكن أبوه غير مسجل بعد.</p>`:"")
+    : `<div class="empty">لا توجد اقتراحات ربط الآن${without?` — ${without} شخص أبوه غير مسجل بعد`:""}.</div>`;
+  hydratePhotos($("#lkList"));
+}
+$("#lkList").addEventListener("click",async e=>{
+  const b=e.target.closest("[data-lk]"); if(!b){ const o=e.target.closest("[data-open]"); if(o) showFamily(+o.dataset.open); return; }
+  const row=b.closest("[data-child]"); b.disabled=true;
+  if(await linkFather(+row.dataset.child,+b.dataset.lk)) renderLinks(); else b.disabled=false;
+});
 
 /* ================== صلة القرابة ================== */
 const REL={a:null,b:null};
