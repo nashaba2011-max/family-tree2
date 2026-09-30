@@ -268,6 +268,8 @@ table.tbl{width:100%;border-collapse:collapse;font-size:15px}
 .scard.vcard .sc-av{border-style:dashed}
 .sc-badge{position:absolute;top:7px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:11px;font-weight:800;background:#fff;color:#4a34a0;border-radius:999px;padding:2px 10px}
 .scard:not(.vcard).out .sc-band{height:40px}
+.mini.out,#dFam .mini.out{background:rgba(124,92,230,.5);border-color:#c9b8ff;color:#fff}
+.mini.out small{color:rgba(255,255,255,.8)}
 .fam-name.out{border-color:#c9b8ff!important;background:rgba(124,92,230,.45)!important}
 .scard .sc-back b{color:#fff}
 .scard .sc-row{border-bottom:1px dashed rgba(255,255,255,.25)}
@@ -1335,11 +1337,14 @@ function cardHtml(p){
   const mName=mother?fullName(mother):([p.mother_first,p.mother_father,p.mother_family].filter(Boolean).join(" ")||p.mother_name||"");
   const chips=[age!==""?`${age} سنة`:"", p.area||"", p.blood_type||"", dead?(f?"رحمها الله":"رحمه الله"):""].filter(Boolean);
   const init=esc((p.first_name||"؟").trim().charAt(0));
-  const out=isOutsider(p) && S.marriages.some(m=>m.person_id===p.id||m.spouse_id===p.id);
-  return `<div class="scard ${f?"f":""} ${dead?"dead":""} ${out?"out":""}" data-card="${p.id}" tabindex="0" role="button" aria-label="${esc(fullName(p))}${out?" — من خارج العائلة":""}">
+  // كل من لقبه ليس النشابة يأخذ اللون المميز
+  const out=norm(p.family||"")!==norm(homeFamily());
+  const married=out && S.marriages.some(m=>m.person_id===p.id||m.spouse_id===p.id);
+  const badge=married?`${f?"زوجة":"زوج"} من خارج العائلة`:(p.family?`لقب ${p.family}`:"بدون لقب");
+  return `<div class="scard ${f?"f":""} ${dead?"dead":""} ${out?"out":""}" data-card="${p.id}" tabindex="0" role="button" aria-label="${esc(fullName(p))}${out?" — "+esc(badge):""}">
   <div class="sc-inner">
     <div class="sc-face sc-front">
-      <div class="sc-band"><span class="sc-ser">#${p.serial}</span>${out?`<span class="sc-badge">${f?"زوجة":"زوج"} من خارج العائلة</span>`:""}<button type="button" class="sc-flip" data-flip aria-label="قلب البطاقة">↻</button></div>
+      <div class="sc-band"><span class="sc-ser">#${p.serial}</span>${out?`<span class="sc-badge">${esc(badge)}</span>`:""}<button type="button" class="sc-flip" data-flip aria-label="قلب البطاقة">↻</button></div>
       <span class="sc-av" ${p.photo_path?`data-photo="${esc(p.photo_path)}"`:""} aria-hidden="true">${init}</span>
       <span class="sc-name">${esc([p.first_name,p.father_name,p.grandfather_name].filter(Boolean).join(" "))}</span>
       <span class="sc-fam">${esc([p.family?`عائلة ${p.family}`:"", p.kunya||""].filter(Boolean).join(" · "))}</span>
@@ -1429,7 +1434,7 @@ function siblingsOf(p){
     .map(x=>{ const f=p.father_id&&x.father_id===p.father_id, m=p.mother_id&&x.mother_id===p.mother_id; return {x, note: f&&m?"":f?"لأب":"لأم"}; });
 }
 function famMini(x,note=""){
-  const btn=`<button type="button" class="mini ${isM(x)?"":"f"}" data-fam="${x.id}">${avatarHtml(x,"sm")}<span><b>${esc(x.first_name)}</b><small>#${x.serial}${x.birth_date?" · "+x.birth_date.slice(0,4):""}${x.life_status==="متوفى"?" · متوفى":""}${note?" · "+note:""}</small></span></button>`;
+  const btn=`<button type="button" class="mini ${isM(x)?"":"f"} ${norm(x.family||"")!==norm(homeFamily())?"out":""}" data-fam="${x.id}">${avatarHtml(x,"sm")}<span><b>${esc(x.first_name)}</b><small>#${x.serial}${x.birth_date?" · "+x.birth_date.slice(0,4):""}${x.life_status==="متوفى"?" · متوفى":""}${note?" · "+note:""}</small></span></button>`;
   return btn;
 }
 function famGroup(title, items){ return `<div class="fam-grp"><h5>${title} (${items.length})</h5><div class="fam-list">${items.length?items.join(""):'<span class="fam-none">لا يوجد</span>'}</div></div>`; }
