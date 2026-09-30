@@ -133,6 +133,17 @@ table.tbl{width:100%;border-collapse:collapse;font-size:15px}
 .tag{display:inline-block;font-size:12px;border-radius:999px;padding:0 8px;border:1px solid var(--line);color:var(--ink-2)}
 .tag.dead{border-color:var(--ink-3);background:var(--tan-l)}
 .empty{text-align:center;padding:30px 12px;color:var(--ink-3)}
+/* بطاقة الأسرة السريعة */
+.fam-head{display:flex;align-items:center;gap:14px;margin-bottom:12px}
+.fam-head .av{width:70px;height:70px;font-size:28px}
+.fam-head h4{margin:0;font-size:19px;color:var(--olive-d);line-height:1.4}
+.fam-grp{margin-top:12px}
+.fam-grp h5{margin:0 0 6px;font-size:14px;color:var(--ink-2);display:flex;align-items:center;gap:8px}
+.fam-grp h5::after{content:"";flex:1;height:1.5px;background:var(--tan)}
+.fam-list{display:flex;flex-wrap:wrap;gap:6px}
+.fam-name{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--line);border-radius:999px;padding:3px 12px 3px 4px;background:var(--tan-l);font-size:14px;color:var(--ink)}
+.fam-none{color:var(--ink-3);font-size:13px}
+.mini small.tag2{display:block;color:var(--ink-3)}
 /* صلة القرابة */
 .rel-pick{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;margin-bottom:14px}
 .rel-slot{min-height:84px;border:2px dashed var(--olive);border-radius:12px;background:var(--paper);display:flex;align-items:center;justify-content:center;gap:10px;padding:10px;cursor:pointer;color:var(--ink);font-weight:700;text-align:start}
@@ -432,6 +443,13 @@ dialog::backdrop{background:rgba(30,28,18,.55)}
     <input class="inp" id="pickQ" type="search" placeholder="اكتب الاسم أو رقم التسلسل أو الرقم الشخصي" style="text-align:start">
     <div class="pick-list" id="pickList"></div>
   </div>
+</dialog>
+
+<!-- ============ بطاقة الأسرة ============ -->
+<dialog id="dFam" aria-labelledby="dFamT">
+  <div class="dlg-h"><h3 id="dFamT">الأسرة</h3><button class="btn small" type="button" data-close>إغلاق</button></div>
+  <div class="dlg-b" id="famBody"></div>
+  <div class="dlg-f"><button class="btn" type="button" id="famRel">صلة القرابة</button><button class="btn primary" type="button" id="famOpen">فتح السجل الكامل</button></div>
 </dialog>
 
 <!-- ============ الملاحظات ============ -->
@@ -1131,7 +1149,7 @@ function renderList(){
   hydratePhotos($("#listBody"));
 }
 ["#qText","#qGender","#qLife","#qArea"].forEach(s=>$(s).addEventListener("input",renderList));
-$("#listBody").addEventListener("click",e=>{ const r=e.target.closest("[data-open]"); if(r) openRecord(+r.dataset.open); });
+$("#listBody").addEventListener("click",e=>{ const r=e.target.closest("[data-open]"); if(r) showFamily(+r.dataset.open); });
 $("#listBody").addEventListener("keydown",e=>{ const r=e.target.closest("[data-open]"); if(r&&e.key==="Enter") openRecord(+r.dataset.open); });
 
 /* ---------- التصدير ---------- */
@@ -1155,6 +1173,37 @@ $("#exportBtn").onclick=async()=>{
     XLSX.writeFile(wb,`سجل-عائلة-النشابة-${new Date().toISOString().slice(0,10)}.xlsx`);
   }catch(err){ toast(errMsg(err),true); }
 };
+
+/* ================== بطاقة الأسرة السريعة ================== */
+let famId=null;
+function siblingsOf(p){
+  return S.people.filter(x=>x.id!==p.id && ((p.father_id && x.father_id===p.father_id) || (p.mother_id && x.mother_id===p.mother_id)))
+    .sort((a,b)=>(a.birth_date||"9").localeCompare(b.birth_date||"9")||a.serial-b.serial)
+    .map(x=>{ const f=p.father_id&&x.father_id===p.father_id, m=p.mother_id&&x.mother_id===p.mother_id; return {x, note: f&&m?"":f?"لأب":"لأم"}; });
+}
+function famMini(x,note=""){ return `<button type="button" class="mini ${isM(x)?"":"f"}" data-fam="${x.id}">${avatarHtml(x,"sm")}<span><b>${esc(x.first_name)}</b><small>#${x.serial}${x.birth_date?" · "+x.birth_date.slice(0,4):""}${x.life_status==="متوفى"?" · متوفى":""}${note?" · "+note:""}</small></span></button>`; }
+function famGroup(title, items){ return `<div class="fam-grp"><h5>${title} (${items.length})</h5><div class="fam-list">${items.length?items.join(""):'<span class="fam-none">لا يوجد</span>'}</div></div>`; }
+function showFamily(id){
+  const p=S.byId.get(id); if(!p) return; famId=id;
+  const father=S.byId.get(p.father_id), mother=S.byId.get(p.mother_id);
+  const motherName=[p.mother_first,p.mother_father,p.mother_grandfather,p.mother_family].filter(Boolean).join(" ")||p.mother_name||"";
+  const sib=siblingsOf(p), kids=childrenOf(p);
+  const spouses=[]; S.marriages.forEach(m=>{ if(m.person_id===p.id){ const sp=S.byId.get(m.spouse_id); spouses.push(sp?famMini(sp):`<span class="fam-name">${esc(m.spouse_name||"")}</span>`); } else if(m.spouse_id===p.id){ const sp=S.byId.get(m.person_id); if(sp) spouses.push(famMini(sp)); } });
+  let h=`<div class="fam-head">${avatarHtml(p)}<div><h4>${esc(fullName(p))}</h4><div class="muted" style="font-size:13px">#${p.serial}${ageOf(p)!==""?` · ${ageOf(p)} سنة`:""}${p.area?" · "+esc(p.area):""}${p.life_status==="متوفى"?" · متوفى":""}</div></div></div>`;
+  h+=famGroup("الأب",father?[famMini(father)]:(p.father_name?[`<span class="fam-name">${esc([p.father_name,p.grandfather_name].filter(Boolean).join(" "))}</span>`]:[]));
+  h+=famGroup("الأم",mother?[famMini(mother)]:(motherName?[`<span class="fam-name">${esc(motherName)}</span>`]:[]));
+  h+=famGroup("الإخوة",sib.filter(o=>isM(o.x)).map(o=>famMini(o.x,o.note)));
+  h+=famGroup("الأخوات",sib.filter(o=>!isM(o.x)).map(o=>famMini(o.x,o.note)));
+  h+=famGroup(p.gender==="أنثى"?"الأزواج":"الزوجات",spouses);
+  h+=famGroup("الأبناء",kids.filter(isM).map(k=>famMini(k)));
+  h+=famGroup("البنات",kids.filter(k=>!isM(k)).map(k=>famMini(k)));
+  $("#dFamT").textContent=`أسرة ${p.first_name}`; $("#famBody").innerHTML=h;
+  if(!$("#dFam").open) $("#dFam").showModal();
+  $("#famBody").scrollTop=0; hydratePhotos($("#dFam"));
+}
+$("#famBody").addEventListener("click",e=>{ const b=e.target.closest("[data-fam]"); if(b) showFamily(+b.dataset.fam); });
+$("#famOpen").onclick=()=>{ $("#dFam").close(); openRecord(famId); };
+$("#famRel").onclick=()=>{ $("#dFam").close(); REL.a=famId; REL.b=null; go("rel"); };
 
 /* ================== صلة القرابة ================== */
 const REL={a:null,b:null};
@@ -1258,7 +1307,7 @@ function drawTree(focusId){
 $("#treeRoot").onchange=()=>drawTree();
 $("#treeBox").addEventListener("click",e=>{
   const t=e.target.closest(".tog"); if(t){ const ul=t.closest("li").querySelector(":scope>ul"); if(ul){ ul.hidden=!ul.hidden; t.textContent=ul.hidden?"+":"−"; } return; }
-  const o=e.target.closest("[data-open]"); if(o) openRecord(+o.dataset.open);
+  const o=e.target.closest("[data-open]"); if(o) showFamily(+o.dataset.open);
 });
 $("#treeExpand").onclick=()=>$$("#treeBox ul ul").forEach(u=>{u.hidden=false; const t=u.parentElement.querySelector(":scope>.node .tog"); if(t) t.textContent="−";});
 $("#treeCollapse").onclick=()=>$$("#treeBox ul ul").forEach(u=>{u.hidden=true; const t=u.parentElement.querySelector(":scope>.node .tog"); if(t) t.textContent="+";});
