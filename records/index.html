@@ -775,8 +775,8 @@ function renderRecordForm(){
       const father=S.byId.get(p.father_id), mother=S.byId.get(p.mother_id);
       const gf=father&&S.byId.get(father.father_id), gm=father&&S.byId.get(father.mother_id), mgf=mother&&S.byId.get(mother.father_id), mgm=mother&&S.byId.get(mother.mother_id);
       const gl=x=>x?`${fullName(x)} (${x.serial})`:"";
-      const mp=(k,label)=>`<div class="field" data-k="${k}"><label>${label}</label><input class="inp" id="f_${k}" name="${k}" value="${esc(p[k]||"")}" maxlength="60" ${mother?"readonly":""}></div>`;
-      h+=`<div class="fgrid">${pickerHtml("father_id","الأب",father,"",true)}${pickerHtml("mother_id","الأم",mother,"",true)}
+      const mp=(k,label)=>`<div class="field" data-k="${k}"><label>${label}</label><input class="inp" id="f_${k}" name="${k}" value="${esc(p[k]||"")}" maxlength="60"></div>`;
+      h+=`<div class="fgrid">${pickerHtml("father_id","الأب",father,"",true)}
         ${mp("mother_first","اسم الأم")}${mp("mother_father","اسم أب الأم")}${mp("mother_grandfather","اسم جد الأم")}${mp("mother_family","لقب الأم")}
         ${roField("الجد لأب (أب الأب)", gl(gf))}${roField("الجدة لأب (أم الأب)", gl(gm))}${roField("الجد لأم (أب الأم)", gl(mgf))}${roField("الجدة لأم (أم الأم)", gl(mgm))}</div>`;
       h+=`<div class="fgrid mgrid" style="margin-top:10px">`;
@@ -846,7 +846,9 @@ $("#recForm").addEventListener("keydown", e=>{
   else if(e.key==="Escape") box.remove();
 });
 $("#recForm").addEventListener("focusout", e=>{ if(e.target.name==="father_name") setTimeout(()=>e.target.closest(".field")?.querySelector(".sugg")?.remove(),150); });
-$("#recForm").addEventListener("input", e=>{ if(e.target.name==="father_name") fatherSuggest(e.target); });
+$("#recForm").addEventListener("input", e=>{ if(e.target.name==="father_name") fatherSuggest(e.target);
+  // تعديل اسم الأم يدوياً يفك ربطها بسجل الأم إذا صار مختلفاً
+  if(e.target.name==="mother_first" && S.current.mother_id){ const m=S.byId.get(S.current.mother_id); if(!m || norm(m.first_name)!==norm(e.target.value)) S.current.mother_id=null; } });
 $("#recForm").addEventListener("input", e=>{ setDirty(true); if(e.target.name==="area"){ const g=lkByName("place",e.target.value)?.extra||""; $("#f_governorate").value=g; } refreshDerived(); });
 $("#recForm").addEventListener("change", e=>{ setDirty(true); if(e.target.name==="area"){ $("#f_governorate").value=lkByName("place",e.target.value)?.extra||""; } refreshDerived(); });
 $("#recForm").addEventListener("click", e=>{
