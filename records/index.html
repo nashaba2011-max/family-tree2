@@ -777,8 +777,7 @@ function renderRecordForm(){
       const gl=x=>x?`${fullName(x)} (${x.serial})`:"";
       const mp=(k,label)=>`<div class="field" data-k="${k}"><label>${label}</label><input class="inp" id="f_${k}" name="${k}" value="${esc(p[k]||"")}" maxlength="60"></div>`;
       h+=`<div class="fgrid">${pickerHtml("father_id","الأب",father,"",true)}
-        ${mp("mother_first","اسم الأم")}${mp("mother_father","اسم أب الأم")}${mp("mother_grandfather","اسم جد الأم")}${mp("mother_family","لقب الأم")}
-        ${roField("الجد لأب (أب الأب)", gl(gf))}${roField("الجدة لأب (أم الأب)", gl(gm))}${roField("الجد لأم (أب الأم)", gl(mgf))}${roField("الجدة لأم (أم الأم)", gl(mgm))}</div>`;
+        ${mp("mother_first","اسم الأم")}${mp("mother_father","اسم أب الأم")}${mp("mother_grandfather","اسم جد الأم")}${mp("mother_family","لقب الأم")}</div>`;
       h+=`<div class="fgrid mgrid" style="margin-top:10px">`;
       for(let i=1;i<=4;i++){
         const m=S.curMarriages.find(x=>x.ord===i)||{}; const sp=S.byId.get(m.spouse_id);
