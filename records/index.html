@@ -153,6 +153,13 @@ table.tbl{width:100%;border-collapse:collapse;font-size:15px}
 #dFam .mini.f{border-color:rgba(240,169,196,.9)}
 #dFam .mini small{color:rgba(255,255,255,.75)}
 #dFam .mini:hover{background:rgba(255,255,255,.3)}
+.mini-wrap{display:inline-flex;align-items:center;gap:4px}
+.mini-acts{display:inline-flex;flex-direction:column;gap:3px}
+.mini-acts button{width:28px;height:24px;border-radius:8px;border:1px solid var(--line);background:var(--card,#fff);cursor:pointer;font-size:13px;line-height:1;padding:0}
+.mini-acts button.del{color:#b3261e}
+#dFam .mini-acts button{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.5);color:#fff}
+#dFam .mini-acts button:hover{background:rgba(255,255,255,.4)}
+#dFam .mini-acts button.del:hover{background:#b3261e;border-color:#b3261e}
 #dFam .fam-name{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.35);color:#fff}
 #dFam .fam-none{color:rgba(255,255,255,.6)}
 #dFam .linkhint{margin-top:8px;font-size:13px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;color:rgba(255,255,255,.9)}
@@ -877,7 +884,7 @@ function roField(label, val){ return `<div class="field"><label>${label}</label>
 
 async function openRecord(id, preset){
   if (S.dirty && !(await ask("تغييرات غير محفوظة","فتح سجل آخر سيلغي التغييرات. متابعة؟"))) return;
-  S.returnTo=null;
+  S.returnTo=null; S.returnFam=null;
   // جلب أحدث نسخة من السجل وزيجاته قبل العرض، حتى لا يمسح الحفظ تعديلات تمت من جهاز آخر
   if(id){ try{
     const [r1,r2]=await Promise.all([db.from("fr_people").select("*").eq("id",id).maybeSingle(), db.from("fr_marriages").select("*").eq("person_id",id)]);
@@ -1140,7 +1147,10 @@ async function saveRecord(){
   finally{ saving=false; $$("#rSave,#rSaveExit").forEach(b=>b.disabled=false); }
 }
 $("#rSave").onclick=async()=>{ if(await saveRecord()) renderRecordForm(); };
-$("#rSaveExit").onclick=async()=>{ if(await saveRecord()){ const back=S.returnTo; S.returnTo=null; if(back && S.byId.get(back)) openRecord(back); else go("menu"); } };
+$("#rSaveExit").onclick=async()=>{ if(await saveRecord()){ const back=S.returnTo, fam=S.returnFam; S.returnTo=null; S.returnFam=null;
+  if(back && S.byId.get(back)) openRecord(back);
+  else if(fam && S.byId.get(fam)){ go(S.lastList||"list"); showFamily(fam); }
+  else go("menu"); } };
 // إضافة ابن/ابنة من سجل الوالد: سجل جديد برقم تسلسل تلقائي، مربوط بالوالدين ومعبّأ منهما
 async function addChild(g){
   const par=S.current; if(!par || !par.id) return;
@@ -1161,17 +1171,21 @@ async function addChild(g){
 }
 $("#rBack").onclick=()=>go(S.lastList||"list");
 $("#rTree").onclick=async()=>{ if(S.dirty && !(await ask("تغييرات غير محفوظة","هل تريد الخروج بدون حفظ؟"))) return; setDirty(false); go("tree", S.current.id); };
-$("#rDelete").onclick=async()=>{
-  const p=S.current; if(!p.id) return;
+// حذف شخص من السجل (يُستخدم من صفحة السجل ومن بطاقة الأسرة)
+async function deletePerson(p){
   const kids=childrenOf(p).length;
-  if(!(await ask("حذف السجل",`سيتم حذف سجل «${fullName(p)}» وملاحظاته نهائياً${kids?`، وسيُفك ربط ${kids} من الأبناء به`:""}. متابعة؟`,{okText:"حذف نهائي"}))) return;
+  if(!(await ask("حذف السجل",`سيتم حذف سجل «${fullName(p)}» #${p.serial} وملاحظاته نهائياً${kids?`، وسيُفك ربط ${kids} من الأبناء به`:""}. متابعة؟`,{okText:"حذف نهائي"}))) return false;
   try{
     const {error}=await db.from("fr_people").delete().eq("id",p.id); if(error) throw error;
     if(p.photo_path) db.storage.from(PHOTO_BUCKET).remove([p.photo_path]);
     S.people.forEach(x=>{ if(x.father_id===p.id) x.father_id=null; if(x.mother_id===p.id) x.mother_id=null; });
     S.marriages=S.marriages.filter(m=>m.person_id!==p.id).map(m=>m.spouse_id===p.id?{...m,spouse_id:null}:m);
-    setPeople(S.people.filter(x=>x.id!==p.id)); setDirty(false); toast("تم حذف السجل"); go("list");
-  }catch(err){ toast(errMsg(err),true); }
+    setPeople(S.people.filter(x=>x.id!==p.id)); toast("تم حذف السجل"); return true;
+  }catch(err){ toast(errMsg(err),true); return false; }
+}
+$("#rDelete").onclick=async()=>{
+  const p=S.current; if(!p.id) return;
+  if(await deletePerson(p)){ setDirty(false); go("list"); }
 };
 $("#rCopy").onclick=async()=>{
   const p=readForm();
@@ -1374,7 +1388,11 @@ function siblingsOf(p){
     .sort((a,b)=>(a.birth_date||"9").localeCompare(b.birth_date||"9")||a.serial-b.serial)
     .map(x=>{ const f=p.father_id&&x.father_id===p.father_id, m=p.mother_id&&x.mother_id===p.mother_id; return {x, note: f&&m?"":f?"لأب":"لأم"}; });
 }
-function famMini(x,note=""){ return `<button type="button" class="mini ${isM(x)?"":"f"}" data-fam="${x.id}">${avatarHtml(x,"sm")}<span><b>${esc(x.first_name)}</b><small>#${x.serial}${x.birth_date?" · "+x.birth_date.slice(0,4):""}${x.life_status==="متوفى"?" · متوفى":""}${note?" · "+note:""}</small></span></button>`; }
+function famMini(x,note=""){
+  const btn=`<button type="button" class="mini ${isM(x)?"":"f"}" data-fam="${x.id}">${avatarHtml(x,"sm")}<span><b>${esc(x.first_name)}</b><small>#${x.serial}${x.birth_date?" · "+x.birth_date.slice(0,4):""}${x.life_status==="متوفى"?" · متوفى":""}${note?" · "+note:""}</small></span></button>`;
+  if(!canEdit()) return btn;
+  return `<span class="mini-wrap">${btn}<span class="mini-acts"><button type="button" data-fedit="${x.id}" title="تعديل ${esc(x.first_name)}" aria-label="تعديل ${esc(x.first_name)}">✎</button>${isAdmin()?`<button type="button" class="del" data-fdel="${x.id}" title="حذف ${esc(x.first_name)}" aria-label="حذف ${esc(x.first_name)}">🗑</button>`:""}</span></span>`;
+}
 function famGroup(title, items){ return `<div class="fam-grp"><h5>${title} (${items.length})</h5><div class="fam-list">${items.length?items.join(""):'<span class="fam-none">لا يوجد</span>'}</div></div>`; }
 function fatherCandidates(p){
   if(!p.father_name || p.father_id) return [];
@@ -1423,6 +1441,9 @@ function showFamily(id){
   $("#famBody").scrollTop=0; hydratePhotos($("#dFam"));
 }
 $("#famBody").addEventListener("click",async e=>{ const l=e.target.closest("[data-linkf]"); if(l){ l.disabled=true; if(await linkFather(famId,+l.dataset.linkf)){ showFamily(famId); if(!$("#vList").hidden) renderList(); } else l.disabled=false; return; }
+  const ed=e.target.closest("[data-fedit]"); if(ed){ const back=famId; $("#dFam").close(); await openRecord(+ed.dataset.fedit); if(S.current?.id===+ed.dataset.fedit) S.returnFam=back; return; }
+  const dl=e.target.closest("[data-fdel]"); if(dl){ const x=S.byId.get(+dl.dataset.fdel); if(!x) return;
+    if(await deletePerson(x)){ if(x.id===famId){ $("#dFam").close(); } else showFamily(famId); if(!$("#vList").hidden) renderList(); } return; }
   const b=e.target.closest("[data-fam]"); if(b) showFamily(+b.dataset.fam); });
 $("#famOpen").onclick=()=>{ $("#dFam").close(); openRecord(famId); };
 $("#famRel").onclick=()=>{ $("#dFam").close(); REL.a=famId; REL.b=null; go("rel"); };
