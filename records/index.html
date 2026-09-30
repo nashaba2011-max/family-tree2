@@ -519,7 +519,7 @@ const FIELDS = [
 const SECTIONS = [
   ["p","معلومات شخصية"],["c","الاتصال"],["b","الميلاد والحالة"],["a","العنوان"],["n","النسب والزواج"],["w","المؤهلات والعمل"],["h","الملاحظات التاريخية"]
 ];
-const DB_COLS = FIELDS.filter(f=>!f.virtual).map(f=>f.k).concat(["father_id","mother_id","mother_name","history_notes","photo_path"]);
+const DB_COLS = FIELDS.filter(f=>!f.virtual).map(f=>f.k).concat(["father_id","mother_id","mother_name","mother_first","mother_father","mother_grandfather","mother_family","history_notes","photo_path"]);
 
 /* ================== الحالة ================== */
 const S = { email:"", role:null, people:[], byId:new Map(), marriages:[], lookups:{}, current:null, dirty:false, photoBlob:null, photoRemoved:false, lastList:"list" };
@@ -736,10 +736,10 @@ function fieldHtml(f, p){
   }
   return `<div class="${cls}" data-k="${f.k}"><label for="${id}">${esc(f.label)}</label>${ctl}</div>`;
 }
-function pickerHtml(key,label,person,nameOnly=""){
+function pickerHtml(key,label,person,nameOnly="",short=false){
   const has=person||nameOnly;
   return `<div class="field" data-k="${key}"><label>${label}</label><div class="picker">
-    <button type="button" class="pv ${has?"":"empty"}" data-pick="${key}">${person?esc(fullName(person))+` <small class="muted">(${person.serial})</small>`:nameOnly?esc(nameOnly)+` <small class="muted">(غير مسجلة)</small>`:"اختر من السجلات…"}</button>
+    <button type="button" class="pv ${has?"":"empty"}" data-pick="${key}">${person?esc(short?person.first_name:fullName(person))+` <small class="muted">(${person.serial})</small>`:nameOnly?esc(nameOnly)+` <small class="muted">(غير مسجلة)</small>`:"اختر من السجلات…"}</button>
     ${has?`<button type="button" class="btn small x" data-clear="${key}" aria-label="إزالة">✕</button>`:""}</div></div>`;
 }
 function roField(label, val){ return `<div class="field"><label>${label}</label><input class="inp" value="${esc(val)}" readonly tabindex="-1"></div>`; }
@@ -760,6 +760,8 @@ async function openRecord(id, preset){
 
 function renderRecordForm(){
   const p=S.current, f=$("#recForm");
+  // سجلات قديمة: تعبئة أجزاء اسم الأم من الأم المربوطة أو من الاسم المحفوظ
+  if(!p.mother_first){ const m=S.byId.get(p.mother_id); if(m){ const id=p.mother_id; setMother({person:m}); p.mother_id=id; } else if(p.mother_name){ const id=p.mother_id; setMother({name:p.mother_name}); p.mother_id=id; } }
   const bySec = s => FIELDS.filter(x=>x.sec===s);
   let h="";
   for(const [s,title] of SECTIONS){
@@ -773,7 +775,9 @@ function renderRecordForm(){
       const father=S.byId.get(p.father_id), mother=S.byId.get(p.mother_id);
       const gf=father&&S.byId.get(father.father_id), gm=father&&S.byId.get(father.mother_id), mgf=mother&&S.byId.get(mother.father_id), mgm=mother&&S.byId.get(mother.mother_id);
       const gl=x=>x?`${fullName(x)} (${x.serial})`:"";
-      h+=`<div class="fgrid">${pickerHtml("father_id","الأب",father)}${pickerHtml("mother_id","الأم",mother, !mother && p.mother_name ? p.mother_name : "")}
+      const mp=(k,label)=>`<div class="field" data-k="${k}"><label>${label}</label><input class="inp" id="f_${k}" name="${k}" value="${esc(p[k]||"")}" maxlength="60" ${mother?"readonly":""}></div>`;
+      h+=`<div class="fgrid">${pickerHtml("father_id","الأب",father,"",true)}${pickerHtml("mother_id","الأم",mother,"",true)}
+        ${mp("mother_first","اسم الأم")}${mp("mother_father","اسم أب الأم")}${mp("mother_grandfather","اسم جد الأم")}${mp("mother_family","لقب الأم")}
         ${roField("الجد لأب (أب الأب)", gl(gf))}${roField("الجدة لأب (أم الأب)", gl(gm))}${roField("الجد لأم (أب الأم)", gl(mgf))}${roField("الجدة لأم (أم الأم)", gl(mgm))}</div>`;
       h+=`<div class="fgrid mgrid" style="margin-top:10px">`;
       for(let i=1;i<=4;i++){
@@ -803,6 +807,8 @@ function readForm(){
   const p=S.current, f=$("#recForm");
   FIELDS.forEach(x=>{ if(x.virtual) return; const el=f.querySelector(`[name="${x.k}"]`); if(!el) return; let v=el.value.trim(); if(x.type==="number") v = v===""?null:parseInt(v,10); p[x.k] = v===""?null:v; });
   p.history_notes = ($("#f_history_notes").value.trim()) || null;
+  ["mother_first","mother_father","mother_grandfather","mother_family"].forEach(k=>{ const el=$("#f_"+k); if(el) p[k]=el.value.trim()||null; });
+  p.mother_name=[p.mother_first,p.mother_father,p.mother_grandfather,p.mother_family].filter(Boolean).join(" ")||null;
   f.querySelectorAll("[data-mname]").forEach(inp=>{
     const i=+inp.dataset.mname; let m=S.curMarriages.find(x=>x.ord===i);
     if(!m){ m={ord:i}; S.curMarriages.push(m); }
@@ -868,7 +874,15 @@ function wivesOf(id){
   S.marriages.forEach(m=>{ if(m.person_id===id){ if(m.spouse_id) ids.add(m.spouse_id); else if(m.spouse_name) names.push(m.spouse_name); } if(m.spouse_id===id) ids.add(m.person_id); });
   return [...[...ids].map(i=>S.byId.get(i)).filter(w=>w && w.gender!=="ذكر").map(w=>({person:w,name:fullName(w)})), ...[...new Set(names)].map(n=>({person:null,name:n}))];
 }
-function setMother(opt){ const p=S.current; p.mother_id = opt.person ? opt.person.id : null; p.mother_name = opt.name; }
+function motherParts(opt){
+  if(opt.person){ const m=opt.person; return [m.first_name,m.father_name,m.grandfather_name,m.family||m.family_branch]; }
+  const w=String(opt.name||"").trim().split(/\s+/).filter(Boolean); // الاسم الأول، الأب، الجد، ثم اللقب
+  return [w[0],w[1],w[2],w.slice(3).join(" ")];
+}
+function setMother(opt){ const p=S.current; p.mother_id = opt && opt.person ? opt.person.id : null;
+  const parts = opt ? motherParts(opt) : [];
+  ["mother_first","mother_father","mother_grandfather","mother_family"].forEach((k,i)=>p[k]=parts[i]||null);
+  p.mother_name=parts.filter(Boolean).join(" ")||null; }
 function chooseMother(opts){
   pickKey=null; pickCb=null; pickOnly=null;
   $("#dPickT").textContent="للأب أكثر من زوجة — اختر الأم"; $("#pickQ").value=""; $("#pickQ").hidden=true;
@@ -880,7 +894,7 @@ function setLink(key, person){
   const p=S.current;
   if(key==="father_id"||key==="mother_id"){
     p[key]=person?person.id:null;
-    if(key==="mother_id") p.mother_name = person ? fullName(person) : null;
+    if(key==="mother_id") setMother(person?{person}:null);
     if(key==="father_id" && person){ // تعبئة تلقائية من الأب
       p.father_name=person.first_name;
       // سلسلة الأجداد تُنقل من سجل الأب: جد الابن الأول = أب الأب ... وهكذا
