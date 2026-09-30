@@ -1442,7 +1442,8 @@ function fatherCandidates(p){
   if(!p.father_name || p.father_id) return [];
   const desc=new Set(); (function walk(x){ childrenOf(x).forEach(k=>{ if(!desc.has(k.id)){ desc.add(k.id); walk(k); } }); })(p);
   return S.people.filter(c=>c.id!==p.id && !desc.has(c.id) && c.gender!=="أنثى" && norm(c.first_name)===norm(p.father_name)
-      && (!c.father_name || !p.grandfather_name || norm(c.father_name)===norm(p.grandfather_name)))
+      && (!c.father_name || !p.grandfather_name || norm(c.father_name)===norm(p.grandfather_name))
+      && (!c.family || !p.family || norm(c.family)===norm(p.family)))  // لا يُقترح أب من عائلة غير عائلة الابن (مثل أبناء العصفور)
     .sort((a,b)=>((b.father_name&&p.grandfather_name&&norm(b.father_name)===norm(p.grandfather_name))?1:0)-((a.father_name&&p.grandfather_name&&norm(a.father_name)===norm(p.grandfather_name))?1:0) || a.serial-b.serial);
 }
 // ربط الابن بأبيه، وإكمال ما ينقص في سجل الأب من اسم أبيه وجده وجنسه
