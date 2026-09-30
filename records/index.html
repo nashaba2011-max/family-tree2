@@ -861,6 +861,10 @@ async function showPhoto(){
   box.style.backgroundImage = url?`url("${url}")`:""; box.textContent = url?"":"لا توجد صورة";
   const del=$("#photoDel"); if(del) del.hidden = !url;
 }
+function wivesOf(id){
+  const ids=new Set(); S.marriages.forEach(m=>{ if(m.person_id===id&&m.spouse_id) ids.add(m.spouse_id); if(m.spouse_id===id) ids.add(m.person_id); });
+  return [...ids].map(i=>S.byId.get(i)).filter(w=>w && w.gender!=="ذكر");
+}
 function setLink(key, person){
   const p=S.current;
   if(key==="father_id"||key==="mother_id"){
@@ -870,6 +874,12 @@ function setLink(key, person){
       // سلسلة الأجداد تُنقل من سجل الأب: جد الابن الأول = أب الأب ... وهكذا
       [["grandfather_name","father_name"],["grandfather2_name","grandfather_name"],["grandfather3_name","grandfather2_name"],["grandfather4_name","grandfather3_name"]].forEach(([mine,his])=>{ if(person[his]) p[mine]=person[his]; });
       ["family","family_branch","kunya"].forEach(k=>{ if(!p[k]) p[k]=person[k]; });
+      // الأم تؤخذ من زوجات الأب المسجلات
+      if(!p.mother_id){
+        const wives=wivesOf(person.id);
+        if(wives.length===1){ p.mother_id=wives[0].id; setTimeout(()=>toast(`عُبّئت الأم: ${fullName(wives[0])}`),50); }
+        else if(wives.length>1) setTimeout(()=>pickPerson("للأب أكثر من زوجة — اختر الأم",w=>{ readForm(); setLink("mother_id",w); },new Set(wives.map(w=>w.id))),80);
+      }
     }
   } else {
     const i=+key.slice(1); let m=S.curMarriages.find(x=>x.ord===i); if(!m){ m={ord:i}; S.curMarriages.push(m); }
@@ -881,23 +891,24 @@ function setLink(key, person){
 /* ---------- اختيار شخص ---------- */
 let pickKey=null;
 function openPicker(key){
-  pickKey=key; pickCb=null; readForm();
+  pickKey=key; pickCb=null; pickOnly=null; readForm();
   const titles={father_id:"اختيار الأب",mother_id:"اختيار الأم"};
   $("#dPickT").textContent = titles[key] || `اختيار الزوج/الزوجة (زواج ${key.slice(1)})`;
   $("#pickQ").value=""; renderPick(); $("#dPick").showModal(); $("#pickQ").focus();
 }
 let pickCb=null;
-function pickPerson(title, cb){ pickKey=null; pickCb=cb; $("#dPickT").textContent=title; $("#pickQ").value=""; renderPick(); $("#dPick").showModal(); $("#pickQ").focus(); }
+let pickOnly=null;
+function pickPerson(title, cb, only){ pickKey=null; pickCb=cb; pickOnly=only||null; $("#dPickT").textContent=title; $("#pickQ").value=""; renderPick(); $("#dPick").showModal(); $("#pickQ").focus(); }
 function renderPick(){
   const q=norm($("#pickQ").value), p=pickCb?{}:S.current;
   let want=null; if(pickKey==="father_id") want="ذكر"; else if(pickKey==="mother_id") want="أنثى"; else if(p.gender) want = p.gender==="ذكر"?"أنثى":"ذكر";
-  const list=S.people.filter(x=>x.id!==p.id && (!want||!x.gender||x.gender===want) && (!q || norm(fullName(x)).includes(q) || String(x.serial)===q || (x.cpr||"").includes(q))).slice(0,60);
+  const list=S.people.filter(x=>x.id!==p.id && (!pickOnly||pickOnly.has(x.id)) && (!want||!x.gender||x.gender===want) && (!q || norm(fullName(x)).includes(q) || String(x.serial)===q || (x.cpr||"").includes(q))).slice(0,60);
   $("#pickList").innerHTML = list.length ? list.map(x=>`<button type="button" class="pick-item" data-id="${x.id}"><span><b>${esc(fullName(x))}</b>${x.birth_date?` <small class="muted">${x.birth_date.slice(0,4)}</small>`:""}</span><small class="muted ltr">#${x.serial}${x.cpr?" · "+esc(x.cpr):""}</small></button>`).join("")
     : `<div class="empty">لا توجد نتائج${want?` (${want})`:""}</div>`;
 }
 $("#pickQ").addEventListener("input", renderPick);
 $("#pickList").addEventListener("click", e=>{ const b=e.target.closest("[data-id]"); if(!b) return; $("#dPick").close(); const person=S.byId.get(+b.dataset.id); if(pickCb){ const f=pickCb; pickCb=null; f(person); } else setLink(pickKey, person); });
-$("#dPick").addEventListener("close",()=>{ setTimeout(()=>{ pickCb=null; },0); });
+$("#dPick").addEventListener("close",()=>{ setTimeout(()=>{ pickCb=null; pickOnly=null; },0); });
 $("#rRel").onclick=async()=>{ if(S.dirty && !(await ask("تغييرات غير محفوظة","هل تريد الخروج بدون حفظ؟"))) return; setDirty(false); go("rel", S.current.id); };
 
 /* ---------- التحقق والحفظ ---------- */
