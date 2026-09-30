@@ -166,7 +166,47 @@ table.tbl{width:100%;border-collapse:collapse;font-size:15px}
 .mini small{font-size:11.5px;color:var(--ink-3)}
 @media (max-width:640px){.rel-pick{grid-template-columns:1fr}.rel-vs{text-align:center}.ladder{gap:6px 10px}}
 /* بطاقات الأشخاص */
-.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+/* البطاقة الذكية: وجهان، ميلان ثلاثي الأبعاد مع حركة الفأرة، وإحصاءات الأسرة */
+.scard{--rx:0deg;--ry:0deg;--gx:50%;--gy:0%;--band:var(--olive);--band2:#8fa05a;perspective:900px;height:300px;cursor:pointer;outline:none}
+.scard.f{--band:#b0708a;--band2:#d59ab1}
+.scard.dead{--band:#8a8570;--band2:#b5b09b}
+.sc-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transform:rotateX(var(--rx)) rotateY(var(--ry));transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+.scard.flipped .sc-inner{transform:rotateX(var(--rx)) rotateY(calc(180deg + var(--ry)))}
+.scard:hover .sc-inner{transition:transform .12s linear}
+.sc-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:18px;background:var(--paper);border:1px solid var(--line);box-shadow:0 10px 24px rgba(60,55,30,.12);overflow:hidden;display:flex;flex-direction:column;align-items:center;text-align:center;color:var(--ink)}
+.scard:focus-visible .sc-face{outline:3px solid var(--band);outline-offset:2px}
+.sc-face::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at var(--gx) var(--gy),rgba(255,255,255,.35),transparent 55%);opacity:0;transition:opacity .2s}
+.scard:hover .sc-face::after{opacity:1}
+.sc-back{transform:rotateY(180deg);align-items:stretch;text-align:start;padding:14px}
+.sc-band{width:100%;height:78px;flex:none;background:linear-gradient(135deg,var(--band),var(--band2));position:relative}
+.sc-band::before{content:"";position:absolute;inset:0;opacity:.18;background:repeating-linear-gradient(45deg,#fff 0 2px,transparent 2px 12px)}
+.sc-ser{position:absolute;top:8px;inset-inline-start:12px;color:#fff;font-size:12px;font-weight:700;font-family:ui-monospace,Consolas,monospace;direction:ltr;background:rgba(0,0,0,.18);border-radius:999px;padding:1px 8px}
+.sc-flip{position:absolute;top:6px;inset-inline-end:8px;width:30px;height:30px;border-radius:50%;border:0;background:rgba(255,255,255,.9);color:var(--olive-d);font-size:16px;font-weight:800;cursor:pointer;display:grid;place-items:center;z-index:2}
+.sc-back .sc-flip{background:var(--tan-l)}
+.sc-av{margin-top:-46px;width:92px;height:92px;border-radius:50%;border:4px solid var(--paper);box-shadow:0 0 0 3px var(--band);background:var(--olive-l) center/cover no-repeat;display:grid;place-items:center;font-size:38px;font-weight:800;color:var(--olive-d);position:relative;z-index:1;transition:transform .3s}
+.scard.f .sc-av{background-color:#f3e1e8;color:#8a4a62}
+.sc-av.has{color:transparent}
+.scard:hover .sc-av{transform:translateZ(30px) scale(1.04)}
+.sc-name{font-size:16px;font-weight:800;line-height:1.35;margin:8px 10px 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.sc-fam{font-size:12px;color:var(--ink-3)}
+.sc-chips{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin:8px 8px 0}
+.sc-chips span{font-size:11.5px;background:var(--tan-l);border-radius:999px;padding:1px 9px;color:var(--ink-2)}
+.sc-stats{margin-top:auto;width:100%;display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line)}
+.sc-stats span{padding:7px 2px;font-size:11px;color:var(--ink-3);display:grid}
+.sc-stats span+span{border-inline-start:1px solid var(--line)}
+.sc-stats b{font-size:18px;color:var(--band);line-height:1.2}
+.sc-row{display:flex;gap:6px;font-size:13px;padding:5px 0;border-bottom:1px dashed var(--line)}
+.sc-row span{color:var(--ink-3);min-width:38px}
+.sc-row b{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sc-kids{display:flex;align-items:center;margin:10px 0 4px;min-height:36px}
+.sc-kids .av{margin-inline-end:-8px;border:2px solid var(--paper);box-shadow:0 0 0 1.5px var(--band)}
+.sc-kids em{font-style:normal;font-size:12px;color:var(--ink-3);margin-inline-start:14px}
+.sc-acts{margin-top:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.sc-acts button{border:1.5px solid var(--band);background:var(--paper);color:var(--ink);border-radius:10px;padding:6px 2px;font-size:12.5px;font-weight:700;cursor:pointer}
+.sc-acts button:hover{background:var(--olive-l)}
+.sc-phone{text-align:center;font-size:13px;color:var(--ink-2);margin-top:6px;direction:ltr}
+@media (prefers-reduced-motion:reduce){.sc-inner{transition:none}}
 .pcard{display:flex;align-items:center;gap:12px;text-align:start;background:var(--paper);border:1.5px solid var(--line);border-inline-start:5px solid var(--olive);border-radius:12px;padding:10px 12px;cursor:pointer;color:var(--ink);min-width:0;transition:transform .12s, box-shadow .12s, border-color .12s}
 .pcard:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--olive)}
 .pcard.f{border-inline-start-color:#b0708a}
@@ -1124,13 +1164,33 @@ function filtered(){
 }
 function avatarHtml(p, cls=""){ return `<span class="av ${cls} ${p.gender==="أنثى"?"f":""}" ${p.photo_path?`data-photo="${esc(p.photo_path)}"`:""} aria-hidden="true">${esc((p.first_name||"؟").trim().charAt(0))}</span>`; }
 function cardHtml(p){
-  const dead=p.life_status==="متوفى", age=ageOf(p);
-  const meta=[age!==""?`${age} سنة`:"", p.area||""].filter(Boolean).join(" · ") + (dead?" · ":"");
-  return `<button type="button" class="pcard ${p.gender==="أنثى"?"f":""} ${dead?"dead":""}" data-open="${p.id}">${avatarHtml(p)}
-    <span class="pc-body"><b>${esc(fullName(p))}</b>
-    <span class="pc-meta"><span class="pc-serial">#${p.serial}</span> ${esc(meta)}${dead?'<span class="pc-dead">متوفى</span>':""}</span>
-    <span class="pc-meta ltr" style="text-align:end">${esc(p.phone||p.mobile||"")}</span></span>
-    </button>`;
+  const dead=p.life_status==="متوفى", age=ageOf(p), f=p.gender==="أنثى";
+  const kids=childrenOf(p), grand=kids.reduce((n,k)=>n+childrenOf(k).length,0), sib=siblingsOf(p).length;
+  const father=S.byId.get(p.father_id), mother=S.byId.get(p.mother_id);
+  const fName=father?fullName(father):[p.father_name,p.grandfather_name].filter(Boolean).join(" ");
+  const mName=mother?fullName(mother):([p.mother_first,p.mother_father,p.mother_family].filter(Boolean).join(" ")||p.mother_name||"");
+  const chips=[age!==""?`${age} سنة`:"", p.area||"", p.blood_type||"", dead?(f?"رحمها الله":"رحمه الله"):""].filter(Boolean);
+  const init=esc((p.first_name||"؟").trim().charAt(0));
+  return `<div class="scard ${f?"f":""} ${dead?"dead":""}" data-card="${p.id}" tabindex="0" role="button" aria-label="${esc(fullName(p))}">
+  <div class="sc-inner">
+    <div class="sc-face sc-front">
+      <div class="sc-band"><span class="sc-ser">#${p.serial}</span><button type="button" class="sc-flip" data-flip aria-label="قلب البطاقة">↻</button></div>
+      <span class="sc-av" ${p.photo_path?`data-photo="${esc(p.photo_path)}"`:""} aria-hidden="true">${init}</span>
+      <span class="sc-name">${esc([p.first_name,p.father_name,p.grandfather_name].filter(Boolean).join(" "))}</span>
+      <span class="sc-fam">${esc([p.family?`عائلة ${p.family}`:"", p.kunya||""].filter(Boolean).join(" · "))}</span>
+      <div class="sc-chips">${chips.map(c=>`<span>${esc(c)}</span>`).join("")}</div>
+      <div class="sc-stats"><span><b>${kids.length}</b>أبناء</span><span><b>${sib}</b>إخوة</span><span><b>${grand}</b>أحفاد</span></div>
+    </div>
+    <div class="sc-face sc-back">
+      <button type="button" class="sc-flip" data-flip aria-label="رجوع">↺</button>
+      <b style="font-size:15px;margin-bottom:6px;padding-inline-end:34px">${esc(p.first_name)}</b>
+      <div class="sc-row"><span>الأب</span><b>${esc(fName||"—")}</b></div>
+      <div class="sc-row"><span>الأم</span><b>${esc(mName||"—")}</b></div>
+      <div class="sc-kids">${kids.slice(0,5).map(k=>avatarHtml(k,"sm")).join("")}<em>${kids.length?(kids.length>5?`+${kids.length-5} `:"")+"الأبناء":"لا أبناء مسجلون"}</em></div>
+      ${p.phone||p.mobile?`<div class="sc-phone">${esc(p.phone||p.mobile)}</div>`:""}
+      <div class="sc-acts"><button type="button" data-act="fam">الأسرة</button><button type="button" data-act="rec">السجل</button><button type="button" data-act="rel">القرابة</button></div>
+    </div>
+  </div></div>`;
 }
 // روابط الصور الموقّعة تُطلب دفعة واحدة وتُحفظ ساعة
 const photoCache=new Map();
@@ -1149,8 +1209,21 @@ function renderList(){
   hydratePhotos($("#listBody"));
 }
 ["#qText","#qGender","#qLife","#qArea"].forEach(s=>$(s).addEventListener("input",renderList));
-$("#listBody").addEventListener("click",e=>{ const r=e.target.closest("[data-open]"); if(r) showFamily(+r.dataset.open); });
-$("#listBody").addEventListener("keydown",e=>{ const r=e.target.closest("[data-open]"); if(r&&e.key==="Enter") openRecord(+r.dataset.open); });
+$("#listBody").addEventListener("click",e=>{
+  const card=e.target.closest("[data-card]"); if(!card) return; const id=+card.dataset.card;
+  if(e.target.closest("[data-flip]")){ card.classList.toggle("flipped"); hydratePhotos(card); return; }
+  const act=e.target.closest("[data-act]")?.dataset.act;
+  if(act==="rec") return openRecord(id);
+  if(act==="rel"){ REL.a=id; REL.b=null; return go("rel"); }
+  if(act==="fam" || !card.classList.contains("flipped")) showFamily(id);
+});
+// ميلان البطاقة مع حركة الفأرة
+$("#listBody").addEventListener("mousemove",e=>{ const c=e.target.closest(".scard"); if(!c || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const r=c.getBoundingClientRect(), x=(e.clientX-r.left)/r.width, y=(e.clientY-r.top)/r.height;
+  c.style.setProperty("--ry",((x-.5)*16).toFixed(1)+"deg"); c.style.setProperty("--rx",((.5-y)*12).toFixed(1)+"deg");
+  c.style.setProperty("--gx",(x*100).toFixed(0)+"%"); c.style.setProperty("--gy",(y*100).toFixed(0)+"%"); });
+$("#listBody").addEventListener("mouseout",e=>{ const c=e.target.closest(".scard"); if(c && !c.contains(e.relatedTarget)){ c.style.setProperty("--rx","0deg"); c.style.setProperty("--ry","0deg"); } });
+$("#listBody").addEventListener("keydown",e=>{ const c=e.target.closest("[data-card]"); if(c && e.target===c && (e.key==="Enter"||e.key===" ")){ e.preventDefault(); showFamily(+c.dataset.card); } });
 
 /* ---------- التصدير ---------- */
 const XL_COLS = ["رقم التسلسل","الرقم الشخصي","فرع العائلة","الاسم الأول","اسم الأب","اسم الجد","اسم الجد الثاني","اسم الجد الثالث","اسم الجد الرابع","العائلة","الكنية","الرقم الشخصي للاب","الرقم الشخصي للام","زواج 1","زواج 2","زواج 3","زواج 4","الحالة الاجتماعية","الجنس","تاريخ الميلاد","مكان الميلاد","فصيلة الدم","رقم الهاتف الأساسي","رقم الهاتف النقال","البريد الإلكتروني","المحافظة","منطقة السكن","رقم المنزل","رقم الشقة","رقم الشارع","رقم المجمع","المؤهل العلمي","التخصص الدقيق","المسمى الوظيفي","جهة العمل","الهواية","حالة القيد","تاريخ الوفاة","مكان الدفن","رقم تسلسل الأب","رقم تسلسل الأم","الرقم المصنف"];
