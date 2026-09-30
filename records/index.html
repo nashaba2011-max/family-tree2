@@ -102,6 +102,14 @@ textarea.inp{text-align:start;font-weight:500;min-height:90px;resize:vertical}
 .photo-box{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
 .photo{width:120px;height:140px;border:2px solid var(--olive);border-radius:8px;background:var(--tan-l) center/cover no-repeat;display:grid;place-items:center;color:var(--ink-3);font-size:13px;flex:none}
 .picker{display:flex;gap:6px;align-items:center}
+.field[data-k="father_name"]{position:relative}
+.sugg{position:absolute;top:100%;inset-inline-start:150px;width:calc(100% - 150px);min-width:320px;z-index:12;background:var(--paper);border:1.5px solid var(--olive);border-radius:8px;box-shadow:var(--shadow);margin-top:4px;overflow:hidden}
+.sugg button{display:flex;justify-content:space-between;gap:8px;width:100%;border:0;background:none;padding:8px 12px;text-align:start;cursor:pointer;color:var(--ink);font-size:15px}
+.sugg button+button{border-top:1px solid var(--line)}
+.sugg button:hover,.sugg button.on{background:var(--olive-l)}
+.sugg small{color:var(--ink-3)}
+.sugg .hint{padding:6px 12px;font-size:12px;color:var(--ink-3);background:var(--tan-l)}
+@media (max-width:640px){.sugg{inset-inline-start:0;width:100%;min-width:0}}
 .picker .pv{flex:1;min-height:40px;border:1.5px dashed var(--olive);border-radius:6px;background:var(--paper);padding:6px 10px;font-weight:700;text-align:center;cursor:pointer;color:var(--ink)}
 .picker .pv.empty{color:var(--ink-3);font-weight:500}
 .picker .x{min-width:34px}
@@ -773,6 +781,30 @@ function refreshDerived(){
   $$("#recForm .deadf").forEach(el=>el.hidden=!dead);
   $("#rCode").textContent = classCode(p);
 }
+// كتابة اسم الأب: تظهر قائمة بالأشخاص المسجلين بهذا الاسم، واختيار أحدهم يربطه كأب ويملأ الأجداد والعائلة
+let suggSel=0;
+function fatherSuggest(inp){
+  const fd=inp.closest(".field"); fd.querySelector(".sugg")?.remove();
+  const q=norm(inp.value); if(q.length<1 || S.current.father_id) return;
+  const list=S.people.filter(x=>x.id!==S.current.id && x.gender!=="أنثى" && norm(x.first_name).startsWith(q))
+    .sort((a,b)=>norm(a.first_name).length-norm(b.first_name).length || a.serial-b.serial).slice(0,6);
+  if(!list.length) return;
+  suggSel=0;
+  const box=document.createElement("div"); box.className="sugg"; box.setAttribute("role","listbox");
+  box.innerHTML=`<div class="hint">اختر الأب لتعبئة الأجداد والعائلة تلقائياً</div>`+list.map((x,i)=>`<button type="button" data-sid="${x.id}" class="${i?"":"on"}"><span>${esc([x.first_name,x.father_name,x.grandfather_name,x.family].filter(Boolean).join(" "))}</span><small class="ltr">#${x.serial}${x.birth_date?" · "+x.birth_date.slice(0,4):""}</small></button>`).join("");
+  box.addEventListener("mousedown",e=>{ const b=e.target.closest("[data-sid]"); if(!b) return; e.preventDefault(); pickFather(+b.dataset.sid); });
+  fd.append(box);
+}
+function pickFather(id){ readForm(); setLink("father_id", S.byId.get(id)); toast("رُبط الأب وعُبّئت الأجداد والعائلة"); }
+$("#recForm").addEventListener("keydown", e=>{
+  if(e.target.name!=="father_name") return; const box=e.target.closest(".field").querySelector(".sugg"); if(!box) return;
+  const items=[...box.querySelectorAll("[data-sid]")];
+  if(e.key==="ArrowDown"||e.key==="ArrowUp"){ e.preventDefault(); suggSel=(suggSel+(e.key==="ArrowDown"?1:-1)+items.length)%items.length; items.forEach((b,i)=>b.classList.toggle("on",i===suggSel)); }
+  else if(e.key==="Enter"){ e.preventDefault(); pickFather(+items[suggSel].dataset.sid); }
+  else if(e.key==="Escape") box.remove();
+});
+$("#recForm").addEventListener("focusout", e=>{ if(e.target.name==="father_name") setTimeout(()=>e.target.closest(".field")?.querySelector(".sugg")?.remove(),150); });
+$("#recForm").addEventListener("input", e=>{ if(e.target.name==="father_name") fatherSuggest(e.target); });
 $("#recForm").addEventListener("input", e=>{ setDirty(true); if(e.target.name==="area"){ const g=lkByName("place",e.target.value)?.extra||""; $("#f_governorate").value=g; } refreshDerived(); });
 $("#recForm").addEventListener("change", e=>{ setDirty(true); if(e.target.name==="area"){ $("#f_governorate").value=lkByName("place",e.target.value)?.extra||""; } refreshDerived(); });
 $("#recForm").addEventListener("click", e=>{
