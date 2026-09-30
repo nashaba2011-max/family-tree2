@@ -449,7 +449,7 @@ dialog::backdrop{background:rgba(30,28,18,.55)}
     <!-- السجلات والبحث -->
     <section id="vList" hidden>
       <div class="toolbar">
-        <select class="inp" id="qBy" aria-label="البحث بـ"><option value="">بحث في الكل</option><option value="name">اسم الشخص</option><option value="mother">اسم الأم</option><option value="father">اسم الأب</option></select>
+        <select class="inp" id="qBy" aria-label="البحث بـ"><option value="">بحث في الكل</option><option value="name">اسم الشخص</option><option value="mother">اسم الأم</option><option value="father">اسم الأب</option><option value="spouse">اسم الزوج / الزوجة</option></select>
         <input class="inp" id="qText" type="search" placeholder="ابحث بالاسم، اسم الأم، رقم التسلسل، الرقم الشخصي أو الهاتف…" aria-label="بحث">
         <select class="inp" id="qGender" aria-label="الجنس"><option value="">الكل</option><option>ذكر</option><option>أنثى</option></select>
         <select class="inp" id="qLife" aria-label="حالة القيد"><option value="">كل الحالات</option><option>على قيد الحياة</option><option>متوفى</option></select>
@@ -1263,6 +1263,11 @@ function filtered(){
   const dadOf=p=>{ const f=S.byId.get(p.father_id); return norm(f?fullName(f):[p.father_name,p.grandfather_name].filter(Boolean).join(" ")); };
   // الاسم الكامل: كل كلمة يكتبها المستخدم يجب أن تكون ضمن سلسلة الاسم (الاسم، الأب، الأجداد الأربعة، العائلة، الفرع، الكنية)
   const words=q.split(" ").filter(Boolean);
+  // أسماء الأزواج/الزوجات: المسجلون في السجل (بالاتجاهين) والمكتوبون بالاسم فقط
+  const spMap=new Map(); const addSp=(id,n)=>{ if(!n) return; const a=spMap.get(id)||[]; a.push(norm(n)); spMap.set(id,a); };
+  if(q) S.marriages.forEach(m=>{ const sp=S.byId.get(m.spouse_id), pp=S.byId.get(m.person_id);
+    addSp(m.person_id, sp?fullName(sp):m.spouse_name); if(sp&&pp) addSp(sp.id, fullName(pp)); });
+  const spHit=p=>(spMap.get(p.id)||[]).some(n=>{ const toks=n.split(" "); return words.every(w=>toks.some(t=>t.startsWith(w))); });
   const nameHit=p=>{ const chain=[p.first_name,p.father_name,p.grandfather_name,p.grandfather2_name,p.grandfather3_name,p.grandfather4_name,p.family,p.family_branch,p.kunya].filter(Boolean).map(norm).join(" ");
     const toks=chain.split(" "); return words.every(w=>toks.some(t=>t.startsWith(w))); };
   const hit=p=>{
@@ -1270,7 +1275,8 @@ function filtered(){
     if(by==="mother") return momOf(p).includes(q);
     if(by==="father") return dadOf(p).includes(q);
     if(by==="name") return nameHit(p);
-    return nameHit(p) || momOf(p).includes(q) || String(p.serial)===q || (p.cpr||"").includes(q) || (p.phone||"").includes(q) || (p.mobile||"").includes(q);
+    if(by==="spouse") return spHit(p);
+    return nameHit(p) || spHit(p) || momOf(p).includes(q) || String(p.serial)===q || (p.cpr||"").includes(q) || (p.phone||"").includes(q) || (p.mobile||"").includes(q);
   };
   return S.people.filter(p=>(!g||p.gender===g)&&(!l||p.life_status===l)&&(!a||p.area===a)&&hit(p));
 }
@@ -1298,6 +1304,8 @@ function cardHtml(p){
       <b style="font-size:15px;margin-bottom:6px;padding-inline-end:34px">${esc(p.first_name)}</b>
       <div class="sc-row"><span>الأب</span><b>${esc(fName||"—")}</b></div>
       <div class="sc-row"><span>الأم</span><b>${esc(mName||"—")}</b></div>
+      ${(()=>{ const sp=[]; S.marriages.forEach(m=>{ if(m.person_id===p.id){ const s=S.byId.get(m.spouse_id); sp.push(s?[s.first_name,s.father_name].filter(Boolean).join(" "):(m.spouse_name||"")); } else if(m.spouse_id===p.id){ const s=S.byId.get(m.person_id); if(s) sp.push([s.first_name,s.father_name].filter(Boolean).join(" ")); } });
+        const list=sp.filter(Boolean); return list.length?`<div class="sc-row"><span>${f?"الزوج":"الزوجة"}</span><b>${esc(list.join("، "))}</b></div>`:""; })()}
       <div class="sc-kids">${kids.slice(0,5).map(k=>avatarHtml(k,"sm")).join("")}<em>${kids.length?(kids.length>5?`+${kids.length-5} `:"")+"الأبناء":"لا أبناء مسجلون"}</em></div>
       ${p.phone||p.mobile?`<div class="sc-phone">${esc(p.phone||p.mobile)}</div>`:""}
       <div class="sc-acts"><button type="button" data-act="fam">الأسرة</button><button type="button" data-act="rec">السجل</button><button type="button" data-act="rel">القرابة</button></div>
