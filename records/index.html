@@ -439,7 +439,10 @@ const FIELDS = [
   {k:"cpr", label:"الرقم الشخصي", sec:"p", type:"text", ltr:1, im:"numeric", max:9, xl:"الرقم الشخصي"},
   {k:"first_name", label:"الاسم الأول", sec:"p", req:1, max:60, xl:"الاسم الأول"},
   {k:"father_name", label:"اسم الأب", sec:"p", max:60, xl:"اسم الأب"},
-  {k:"grandfather_name", label:"اسم الجد", sec:"p", max:60, xl:"اسم الجد"},
+  {k:"grandfather_name", label:"اسم الجد الأول", sec:"p", max:60, xl:"اسم الجد"},
+  {k:"grandfather2_name", label:"اسم الجد الثاني", sec:"p", max:60, xl:"اسم الجد الثاني"},
+  {k:"grandfather3_name", label:"اسم الجد الثالث", sec:"p", max:60, xl:"اسم الجد الثالث"},
+  {k:"grandfather4_name", label:"اسم الجد الرابع", sec:"p", max:60, xl:"اسم الجد الرابع"},
   {k:"family", label:"العائلة", sec:"p", type:"select", lk:"family", xl:"العائلة"},
   {k:"family_branch", label:"فرع العائلة", sec:"p", type:"select", lk:"branch", xl:"فرع العائلة"},
   {k:"kunya", label:"الكنية", sec:"p", type:"combo", lk:"kunya", max:60, xl:"الكنية"},
@@ -796,7 +799,9 @@ function setLink(key, person){
   if(key==="father_id"||key==="mother_id"){
     p[key]=person?person.id:null;
     if(key==="father_id" && person){ // تعبئة تلقائية من الأب
-      p.father_name=person.first_name; p.grandfather_name=person.father_name||p.grandfather_name;
+      p.father_name=person.first_name;
+      // سلسلة الأجداد تُنقل من سجل الأب: جد الابن الأول = أب الأب ... وهكذا
+      [["grandfather_name","father_name"],["grandfather2_name","grandfather_name"],["grandfather3_name","grandfather2_name"],["grandfather4_name","grandfather3_name"]].forEach(([mine,his])=>{ if(person[his]) p[mine]=person[his]; });
       ["family","family_branch","kunya"].forEach(k=>{ if(!p[k]) p[k]=person[k]; });
     }
   } else {
@@ -949,7 +954,7 @@ async function reportHtml(long){
     ${kv([["رقم التسلسل",p.serial],["الرقم الشخصي",p.cpr],["رقم الهاتف",p.phone||p.mobile]])}
     <div style="margin-top:4px"><span style="color:#666">الرقم المصنف: </span><b class="code">${esc(classCode(p))}</b></div>
   </div></div>`;
-  h+=`<h5>الاسم</h5>`+kv([["الاسم الأول",p.first_name],["اسم الأب",p.father_name],["اسم الجد",p.grandfather_name],["فرع العائلة",p.family_branch],["الكنية",p.kunya],["العائلة",p.family]]);
+  h+=`<h5>الاسم</h5>`+kv([["الاسم الأول",p.first_name],["اسم الأب",p.father_name],["اسم الجد الأول",p.grandfather_name],["اسم الجد الثاني",p.grandfather2_name],["اسم الجد الثالث",p.grandfather3_name],["اسم الجد الرابع",p.grandfather4_name],["فرع العائلة",p.family_branch],["الكنية",p.kunya],["العائلة",p.family]]);
   h+=`<h5>العنوان</h5>`+kv([["رقم المنزل",p.house_no],["رقم الشقة",p.apartment_no],["الطريق",p.road_no],["المجمع",p.block_no],["منطقة السكن",p.area],["المحافظة",p.governorate]]);
   if(!long){
     h+=`<h5>بيانات أساسية</h5>`+kv([["الجنس",p.gender],["تاريخ الميلاد",fmtDate(p.birth_date)],["العمر",age!==""?`${age} سنة`:""],["حالة القيد",p.life_status],["فصيلة الدم",p.blood_type],["الحالة الاجتماعية",p.marital_status]]);
@@ -1021,7 +1026,7 @@ $("#listBody").addEventListener("click",e=>{ const r=e.target.closest("[data-ope
 $("#listBody").addEventListener("keydown",e=>{ const r=e.target.closest("[data-open]"); if(r&&e.key==="Enter") openRecord(+r.dataset.open); });
 
 /* ---------- التصدير ---------- */
-const XL_COLS = ["رقم التسلسل","الرقم الشخصي","فرع العائلة","الاسم الأول","اسم الأب","اسم الجد","العائلة","الكنية","الرقم الشخصي للاب","الرقم الشخصي للام","زواج 1","زواج 2","زواج 3","زواج 4","الحالة الاجتماعية","الجنس","تاريخ الميلاد","مكان الميلاد","فصيلة الدم","رقم الهاتف الأساسي","رقم الهاتف النقال","البريد الإلكتروني","المحافظة","منطقة السكن","رقم المنزل","رقم الشقة","رقم الشارع","رقم المجمع","المؤهل العلمي","التخصص الدقيق","المسمى الوظيفي","جهة العمل","الهواية","حالة القيد","تاريخ الوفاة","مكان الدفن","رقم تسلسل الأب","رقم تسلسل الأم","الرقم المصنف"];
+const XL_COLS = ["رقم التسلسل","الرقم الشخصي","فرع العائلة","الاسم الأول","اسم الأب","اسم الجد","اسم الجد الثاني","اسم الجد الثالث","اسم الجد الرابع","العائلة","الكنية","الرقم الشخصي للاب","الرقم الشخصي للام","زواج 1","زواج 2","زواج 3","زواج 4","الحالة الاجتماعية","الجنس","تاريخ الميلاد","مكان الميلاد","فصيلة الدم","رقم الهاتف الأساسي","رقم الهاتف النقال","البريد الإلكتروني","المحافظة","منطقة السكن","رقم المنزل","رقم الشقة","رقم الشارع","رقم المجمع","المؤهل العلمي","التخصص الدقيق","المسمى الوظيفي","جهة العمل","الهواية","حالة القيد","تاريخ الوفاة","مكان الدفن","رقم تسلسل الأب","رقم تسلسل الأم","الرقم المصنف"];
 function rowFor(p){
   const r={}; FIELDS.forEach(f=>{ if(f.xl) r[f.xl]=p[f.k]??""; });
   r["تاريخ الميلاد"]=fmtDate(p.birth_date); r["تاريخ الوفاة"]=fmtDate(p.death_date);
