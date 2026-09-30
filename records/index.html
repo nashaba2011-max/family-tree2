@@ -878,6 +878,12 @@ function roField(label, val){ return `<div class="field"><label>${label}</label>
 async function openRecord(id, preset){
   if (S.dirty && !(await ask("تغييرات غير محفوظة","فتح سجل آخر سيلغي التغييرات. متابعة؟"))) return;
   S.returnTo=null;
+  // جلب أحدث نسخة من السجل وزيجاته قبل العرض، حتى لا يمسح الحفظ تعديلات تمت من جهاز آخر
+  if(id){ try{
+    const [r1,r2]=await Promise.all([db.from("fr_people").select("*").eq("id",id).maybeSingle(), db.from("fr_marriages").select("*").eq("person_id",id)]);
+    if(!r1.error && r1.data){ const i=S.people.findIndex(x=>x.id===id); if(i>=0) S.people[i]=r1.data; setPeople(S.people); }
+    if(!r2.error && r2.data){ S.marriages=S.marriages.filter(m=>m.person_id!==id).concat(r2.data); }
+  }catch(e){} }
   const p = id ? {...S.byId.get(id)} : {...preset};
   if(id && !S.byId.get(id)) { toast("السجل غير موجود",true); return; }
   S.current = p;
